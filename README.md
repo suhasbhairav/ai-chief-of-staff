@@ -26,6 +26,8 @@ The product is designed around a simple idea: every important department should 
 - Exports polished PDF reports with a cover page, KPI snapshot, OpenAI synthesis, chart scorecard tables, department data tables, and creator attribution.
 - Preserves historical trend imports in Supabase for multi-period analysis.
 - Exports board memo PDFs and stores board memo metadata in Supabase.
+- Connects to a real Slack workspace through Slack OAuth, Web API, Events API, and signed request verification.
+- Protects OpenAI calls with enterprise guardrails for prompt injection, jailbreaks, secret leakage, oversized payloads, and unsafe task actions.
 
 ## Product Philosophy
 
@@ -62,6 +64,9 @@ ai-chief-of-staff/
     schema.sql                             # Table creation SQL
     README.md                              # Supabase setup notes
 
+  slack/
+    slack-app-manifest.example.json        # Slack app manifest template
+
   backend/
     main.py                                # FastAPI CSV parsing service scaffold
 
@@ -94,6 +99,9 @@ Primary tables:
 - `organization_summaries`: the latest executive rollup generated from all department snapshots.
 - `department_snapshot_history`: immutable historical import ledger for multi-period trend analysis.
 - `board_memos`: saved board memo metadata and JSON content.
+- `slack_installations`: active Slack workspace installs and bot tokens.
+- `slack_events`: signed Slack event webhook ledger.
+- `slack_message_snapshots`: fetched Slack message snapshots for task harvesting and auditability.
 
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 
@@ -103,6 +111,10 @@ Required frontend environment variables:
 OPENAI_API_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+SLACK_SIGNING_SECRET=
 ```
 
 The Supabase service key is used only inside Next.js route handlers and is never imported into client components.
@@ -131,6 +143,95 @@ For Executive, the request includes:
 - KPI cards
 - Executive scorecard chart points
 - Full organization Supabase JSONB snapshot
+
+## Enterprise AI Guardrails
+
+All OpenAI API calls use [frontend/lib/openai/guardrails.js](frontend/lib/openai/guardrails.js).
+
+The guardrail layer provides:
+
+- Prompt-injection and jailbreak detection for direct user/Slack messages.
+- Redaction for common secret/token/API key patterns.
+- Input normalization and payload size caps before model calls.
+- Explicit untrusted-data wrappers around Slack messages, CSV-derived JSON, task titles, and dashboard snapshots.
+- System-level instructions that prevent following instructions embedded inside retrieved data.
+- Guarded Responses API calls through `guardedResponsesCreate`.
+- JSON extraction checks for model-generated task harvesting.
+- Action validation before resolving, delegating, or adding tasks.
+
+If a direct request resembles a jailbreak or secret-exfiltration attempt, the API blocks it before it reaches OpenAI.
+
+## Slack Integration
+
+This is a real Slack integration, not a simulator.
+
+It supports:
+
+- Slack OAuth install flow through `/api/integrations/slack/authorize`.
+- OAuth callback and token exchange through `/api/integrations/slack/callback`.
+- Bot token storage in Supabase `slack_installations`.
+- Live channel and DM listing through Slack `conversations.list`.
+- Live message history through Slack `conversations.history`.
+- Posting messages through Slack `chat.postMessage`.
+- Signed Events API handling at `/api/slack/events`.
+- DM replies from the AI Chief of Staff inside Slack.
+- Channel task harvesting from Slack messages into the Master To-Do list.
+- Slack message snapshot storage in Supabase.
+
+Create a Slack app using [slack/slack-app-manifest.example.json](slack/slack-app-manifest.example.json), replacing `YOUR_APP_DOMAIN.com` with your deployed app domain.
+
+Required Slack env vars:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://your-app-domain.com
+SLACK_CLIENT_ID=your_slack_client_id
+SLACK_CLIENT_SECRET=your_slack_client_secret
+SLACK_SIGNING_SECRET=your_slack_signing_secret
+```
+
+Slack redirect URL:
+
+```text
+https://your-app-domain.com/api/integrations/slack/callback
+```
+
+Slack Events API request URL:
+
+```text
+https://your-app-domain.com/api/slack/events
+```
+
+Required bot scopes:
+
+```text
+app_mentions:read
+channels:history
+channels:join
+channels:read
+chat:write
+chat:write.public
+groups:history
+groups:read
+im:history
+im:read
+im:write
+mpim:history
+mpim:read
+team:read
+users:read
+```
+
+Required bot events:
+
+```text
+app_mention
+message.channels
+message.groups
+message.im
+message.mpim
+```
+
+After install, open `/integrations` and connect Slack. Then use `/slack` for the live workspace view, `/todo` to sync harvested commitments, and Slack DMs/app mentions to talk to Aegis from inside Slack.
 
 ## PDF Reports
 
@@ -172,6 +273,10 @@ Create `frontend/.env.local` or `frontend/.env`:
 OPENAI_API_KEY=your_openai_api_key_here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_or_secret_key
+NEXT_PUBLIC_APP_URL=https://your-app-domain.com
+SLACK_CLIENT_ID=your_slack_client_id
+SLACK_CLIENT_SECRET=your_slack_client_secret
+SLACK_SIGNING_SECRET=your_slack_signing_secret
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -412,6 +517,10 @@ Expected routes:
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
 /api/analytics/[department]       OpenAI analysis endpoint
+/api/integrations/slack/authorize Slack OAuth start
+/api/integrations/slack/callback  Slack OAuth callback
+/api/slack/events                 Slack Events API endpoint
+/api/slack/channels               Slack conversations.list endpoint
 ```
 
 ## Roadmap

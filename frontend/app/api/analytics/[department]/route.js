@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { readOrganizationSummary } from '@/lib/current-data-store';
+import {
+  guardedResponsesCreate,
+  toGuardrailResponse,
+  wrapUntrustedData,
+} from '@/lib/openai/guardrails';
 
 const client = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'] || 'missing-openai-api-key',
@@ -29,10 +34,10 @@ const buildAnalyticsInput = (department, targetFocus, context = {}) => {
 Core Focus: ${targetFocus}
 
 Executive dashboard summary:
-${JSON.stringify(context.dashboardSummary || {}, null, 2)}
+${wrapUntrustedData("executive-dashboard-summary", context.dashboardSummary || {})}
 
 Organization Supabase JSONB snapshot:
-${JSON.stringify(context.organizationData || {}, null, 2)}
+${wrapUntrustedData("organization-supabase-jsonb", context.organizationData || {})}
 
 Return 5 concise bullets for the CEO. Cover value creation, cash/runway, GTM efficiency, customer/product health, risk posture, and the specific owner or department for each recommended action.`;
   }
@@ -42,7 +47,7 @@ Return 5 concise bullets for the CEO. Cover value creation, cash/runway, GTM eff
 Core Focus: ${targetFocus}
 
 Department Supabase JSONB snapshot:
-${JSON.stringify(context.departmentData || {}, null, 2)}
+${wrapUntrustedData(`${department}-department-supabase-jsonb`, context.departmentData || {})}
 
 Give me 3 concrete bullet points of tactical recommendations.`;
 };
@@ -92,7 +97,7 @@ const createAnalysis = async (department, context = {}) => {
     );
   }
 
-  const response = await client.responses.create({
+  const response = await guardedResponsesCreate(client, {
     model: 'gpt-5.5',
     instructions: 'You are an elite enterprise AI Chief of Staff. You speak directly to the CEO. Provide extremely concise, analytical, action-oriented executive assessments. Never use corporate filler words or fluff. Focus on metrics, risk management, and strategic priority execution.',
     input: buildAnalyticsInput(department, targetFocus, hydratedContext),
@@ -102,6 +107,11 @@ const createAnalysis = async (department, context = {}) => {
 };
 
 const handleAnalyticsError = (error) => {
+  const guardrailResponse = toGuardrailResponse(error);
+  if (guardrailResponse) {
+    return NextResponse.json(guardrailResponse.body, { status: guardrailResponse.status });
+  }
+
   const status = Number.isInteger(error?.status) ? error.status : 500;
   const message = error instanceof Error ? error.message : "Failed tracking analytical computations";
 

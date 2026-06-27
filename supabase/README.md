@@ -23,6 +23,9 @@ Additional operating-system tables:
 
 - `department_snapshot_history`: immutable upload ledger for historical trend imports and multi-period analysis.
 - `board_memos`: board memo metadata and JSON content for exported CEO/department memos.
+- `slack_installations`: real Slack OAuth installations and bot tokens.
+- `slack_events`: signed Slack Events API webhook ledger.
+- `slack_message_snapshots`: Slack channel/DM message snapshots for auditability.
 
 ## 2. Environment Variables
 

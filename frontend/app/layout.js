@@ -61,26 +61,54 @@ export default function RootLayout({ children }) {
             <span className="font-semibold tracking-tight text-sm text-zinc-200">AI Chief of Staff</span>
           </Link>
 
-          <nav className="space-y-1">
-            <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">Departments</div>
-            {DEPARTMENTS.map((dept) => {
-              const isActive = pathname === `/departments/${dept.id}`;
-              return (
-                <Link
-                  key={dept.id}
-                  href={`/departments/${dept.id}`}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                    isActive 
-                      ? 'bg-[#18181b] text-white shadow-sm border border-[#27272a]' 
-                      : 'text-zinc-400 hover:bg-[#121214] hover:text-zinc-200'
-                  }`}
-                >
-                  <span className="mr-2 text-sm">{dept.icon}</span>
-                  <span className="truncate">{dept.name}</span>
-                </Link>
-              );
-            })}
+          <nav className="space-y-6">
+            <div className="space-y-1">
+              <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">AI Agent Co-Pilot</div>
+              {[
+                { id: 'todo', name: 'Master To-Do', href: '/todo', icon: '📋' },
+                { id: 'slack', name: 'Slack Workspace', href: '/slack', icon: '💬' },
+                { id: 'integrations', name: 'Integrations Hub', href: '/integrations', icon: '🔌' },
+              ].map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      isActive 
+                        ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500/50' 
+                        : 'text-zinc-400 hover:bg-[#121214] hover:text-zinc-200'
+                    }`}
+                  >
+                    <span className="mr-2 text-sm">{item.icon}</span>
+                    <span className="truncate">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className="space-y-1">
+              <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">Departments</div>
+              {DEPARTMENTS.map((dept) => {
+                const isActive = pathname === `/departments/${dept.id}`;
+                return (
+                  <Link
+                    key={dept.id}
+                    href={`/departments/${dept.id}`}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      isActive 
+                        ? 'bg-[#18181b] text-white shadow-sm border border-[#27272a]' 
+                        : 'text-zinc-400 hover:bg-[#121214] hover:text-zinc-200'
+                    }`}
+                  >
+                    <span className="mr-2 text-sm">{dept.icon}</span>
+                    <span className="truncate">{dept.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
         </aside>
 

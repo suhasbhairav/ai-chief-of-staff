@@ -55,6 +55,50 @@ create table if not exists public.board_memos (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.slack_installations (
+  id uuid primary key default gen_random_uuid(),
+  team_id text not null unique,
+  team_name text,
+  enterprise_id text,
+  enterprise_name text,
+  app_id text,
+  bot_user_id text,
+  bot_access_token text not null,
+  scope text,
+  authed_user_id text,
+  is_active boolean not null default true,
+  installed_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  content jsonb not null default '{}'::jsonb
+);
+
+create table if not exists public.slack_events (
+  id uuid primary key default gen_random_uuid(),
+  team_id text,
+  event_id text unique,
+  event_type text,
+  channel_id text,
+  user_id text,
+  event_ts text,
+  text text,
+  handled boolean not null default false,
+  content jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.slack_message_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  team_id text,
+  channel_id text not null,
+  channel_name text,
+  message_ts text not null,
+  user_id text,
+  text text,
+  content jsonb not null default '{}'::jsonb,
+  captured_at timestamptz not null default now(),
+  unique (channel_id, message_ts)
+);
+
 create index if not exists department_snapshots_department_id_idx
   on public.department_snapshots (department_id);
 
@@ -76,6 +120,15 @@ create index if not exists board_memos_generated_at_idx
 create index if not exists board_memos_content_gin_idx
   on public.board_memos using gin (content);
 
+create index if not exists slack_installations_active_idx
+  on public.slack_installations (is_active, installed_at desc);
+
+create index if not exists slack_events_created_at_idx
+  on public.slack_events (created_at desc);
+
+create index if not exists slack_message_snapshots_channel_idx
+  on public.slack_message_snapshots (channel_id, captured_at desc);
+
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin
@@ -96,12 +149,24 @@ before update on public.board_memos
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists slack_installations_set_updated_at on public.slack_installations;
+create trigger slack_installations_set_updated_at
+before update on public.slack_installations
+for each row
+execute function public.set_updated_at();
+
 alter table public.department_snapshots enable row level security;
 alter table public.organization_summaries enable row level security;
 alter table public.department_snapshot_history enable row level security;
 alter table public.board_memos enable row level security;
+alter table public.slack_installations enable row level security;
+alter table public.slack_events enable row level security;
+alter table public.slack_message_snapshots enable row level security;
 
 grant select, insert, update, delete on public.department_snapshots to service_role;
 grant select, insert, update, delete on public.organization_summaries to service_role;
 grant select, insert, update, delete on public.department_snapshot_history to service_role;
 grant select, insert, update, delete on public.board_memos to service_role;
+grant select, insert, update, delete on public.slack_installations to service_role;
+grant select, insert, update, delete on public.slack_events to service_role;
+grant select, insert, update, delete on public.slack_message_snapshots to service_role;
