@@ -4,7 +4,7 @@ import csv
 import codecs
 import uvicorn
 
-app = FastAPI(title="Aegis Chief of Staff Core API")
+app = FastAPI(title="AI Chief of Staff Core API")
 
 app.add_middleware(
     CORSMiddleware,
