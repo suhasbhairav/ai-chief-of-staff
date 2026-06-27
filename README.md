@@ -44,52 +44,61 @@ The product is designed around a simple idea: every important department should 
 
 <table>
   <tr>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%); border: 1px solid #c7d2fe; border-radius: 14px;">
       <h3>Executive Command Center</h3>
+      <p><code>CEO OS</code> <code>Board-ready</code></p>
       <p>CEO-level rollups across value creation, cash, GTM efficiency, customer/product health, risk, and execution posture.</p>
       <p><strong>Output:</strong> board-ready operating insight.</p>
     </td>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #ecfeff 0%, #eff6ff 100%); border: 1px solid #67e8f9; border-radius: 14px;">
       <h3>Department Dashboards</h3>
+      <p><code>13 functions</code> <code>KPI charts</code></p>
       <p>Finance, Sales, Marketing, Product, HR, Legal, IT, Operations, Support, Risk, Strategy, R&D, and Executive views.</p>
       <p><strong>Output:</strong> KPI cards and 3-5 charts per function.</p>
     </td>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #86efac; border-radius: 14px;">
       <h3>AI Suggestions On Demand</h3>
+      <p><code>OpenAI</code> <code>Human-triggered</code></p>
       <p>OpenAI calls happen only when a user clicks <code>Fetch Suggestions</code> or <code>Fetch Org Suggestions</code>.</p>
       <p><strong>Output:</strong> concise action recommendations.</p>
     </td>
   </tr>
   <tr>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #f7fee7 0%, #f0fdf4 100%); border: 1px solid #bef264; border-radius: 14px;">
       <h3>Supabase JSONB Store</h3>
+      <p><code>Postgres</code> <code>JSONB</code></p>
       <p>Flexible department snapshots are stored as JSONB, so changing columns does not require schema churn.</p>
       <p><strong>Output:</strong> scalable operating data.</p>
     </td>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #fdf2f8 0%, #fff1f2 100%); border: 1px solid #f9a8d4; border-radius: 14px;">
       <h3>Live Slack Workspace</h3>
+      <p><code>OAuth</code> <code>Events API</code></p>
       <p>Real Slack OAuth, Web API, Events API, signed request verification, task harvesting, and message snapshots.</p>
       <p><strong>Output:</strong> Bond-style company action tracking.</p>
     </td>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%); border: 1px solid #fdba74; border-radius: 14px;">
       <h3>Enterprise Guardrails</h3>
+      <p><code>Security</code> <code>Jailbreak defense</code></p>
       <p>All OpenAI calls are protected against prompt injection, jailbreaks, secret leakage, and unsafe task mutations.</p>
       <p><strong>Output:</strong> safer AI operations.</p>
     </td>
   </tr>
   <tr>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%); border: 1px solid #c4b5fd; border-radius: 14px;">
       <h3>Historical Trend Imports</h3>
+      <p><code>Immutable ledger</code> <code>Trends</code></p>
       <p>Every CSV upload is appended to an immutable Supabase import ledger for multi-period analysis.</p>
       <p><strong>Output:</strong> historical data trail.</p>
     </td>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 100%); border: 1px solid #7dd3fc; border-radius: 14px;">
       <h3>PDF Reports</h3>
+      <p><code>jspdf</code> <code>Executive packet</code></p>
       <p>Beautiful reports include cover pages, AI synthesis, KPI snapshots, chart tables, department tables, and methodology.</p>
       <p><strong>Output:</strong> polished management reports.</p>
     </td>
-    <td width="33%" valign="top">
+    <td width="33%" valign="top" style="background: linear-gradient(135deg, #fff1f2 0%, #fef2f2 100%); border: 1px solid #fda4af; border-radius: 14px;">
       <h3>Board Memo Export</h3>
+      <p><code>Board narrative</code> <code>Supabase</code></p>
       <p>Generates board-facing PDFs and stores memo metadata/content in Supabase.</p>
       <p><strong>Output:</strong> investor-ready narrative.</p>
     </td>
@@ -502,4 +511,3 @@ This is a completely open-source, local-first MVP of an AI operating system for 
 ## License
 
 MIT License. See [LICENSE](LICENSE).
-
