@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { readOrganizationSummary } from '@/lib/current-data-store';
 
 const client = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
+  apiKey: process.env['OPENAI_API_KEY'] || 'missing-openai-api-key',
 });
 
 const departmentIdentities = {
@@ -30,7 +31,7 @@ Core Focus: ${targetFocus}
 Executive dashboard summary:
 ${JSON.stringify(context.dashboardSummary || {}, null, 2)}
 
-Organization current-data JSON:
+Organization Supabase JSONB snapshot:
 ${JSON.stringify(context.organizationData || {}, null, 2)}
 
 Return 5 concise bullets for the CEO. Cover value creation, cash/runway, GTM efficiency, customer/product health, risk posture, and the specific owner or department for each recommended action.`;
@@ -40,10 +41,35 @@ Return 5 concise bullets for the CEO. Cover value creation, cash/runway, GTM eff
 
 Core Focus: ${targetFocus}
 
-Department current-data JSON:
+Department Supabase JSONB snapshot:
 ${JSON.stringify(context.departmentData || {}, null, 2)}
 
 Give me 3 concrete bullet points of tactical recommendations.`;
+};
+
+const hydrateAnalyticsContext = async (department, context = {}) => {
+  if (context.departmentData || context.organizationData) {
+    return context;
+  }
+
+  const organizationSummary = await readOrganizationSummary();
+
+  if (department === "executive") {
+    return {
+      ...context,
+      organizationData: organizationSummary.departments,
+      dashboardSummary: context.dashboardSummary || {
+        totalDepartments: organizationSummary.totalDepartments,
+        totalRecords: organizationSummary.totalRecords,
+        departmentSummaries: organizationSummary.departmentSummaries,
+      },
+    };
+  }
+
+  return {
+    ...context,
+    departmentData: organizationSummary.departments?.[department] || null,
+  };
 };
 
 const createAnalysis = async (department, context = {}) => {
@@ -57,6 +83,7 @@ const createAnalysis = async (department, context = {}) => {
   }
 
   const targetFocus = departmentIdentities[department];
+  const hydratedContext = await hydrateAnalyticsContext(department, context);
 
   if (!openAiApiKey) {
     return NextResponse.json(
@@ -66,9 +93,9 @@ const createAnalysis = async (department, context = {}) => {
   }
 
   const response = await client.responses.create({
-    model: 'gpt-5-nano',
+    model: 'gpt-5.5',
     instructions: 'You are an elite enterprise AI Chief of Staff. You speak directly to the CEO. Provide extremely concise, analytical, action-oriented executive assessments. Never use corporate filler words or fluff. Focus on metrics, risk management, and strategic priority execution.',
-    input: buildAnalyticsInput(department, targetFocus, context),
+    input: buildAnalyticsInput(department, targetFocus, hydratedContext),
   });
 
   return NextResponse.json({ analysis: response.output_text });

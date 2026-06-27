@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { generateBoardMemoPdf, generateDashboardPdfReport } from '@/lib/pdf-report';
 
 // Data maps matching schema structural frameworks for all 13 departments
 const DEPT_CONFIGS = {
@@ -329,10 +330,11 @@ const parseCsvFile = async (file) => {
   return { headers, records };
 };
 
-const buildDepartmentSnapshot = (departmentId, file, parsedCsv) => ({
+const buildDepartmentSnapshot = (departmentId, file, parsedCsv, importType = "current-upload") => ({
   departmentId,
   departmentName: DEPT_CONFIGS[departmentId]?.title || departmentId,
   filename: file.name,
+  importType,
   uploadedAt: new Date().toISOString(),
   headers: parsedCsv.headers,
   recordCount: parsedCsv.records.length,
@@ -351,6 +353,18 @@ const fetchCurrentDataStore = async () => {
   return data.departments || {};
 };
 
+const fetchHistoricalDataStore = async (departmentId) => {
+  const params = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : "";
+  const response = await fetch(`/api/historical-data${params}`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to load historical imports.");
+  }
+
+  return data.history || [];
+};
+
 const saveDepartmentSnapshot = async (departmentSnapshot) => {
   const response = await fetch("/api/current-data", {
     method: "POST",
@@ -366,6 +380,23 @@ const saveDepartmentSnapshot = async (departmentSnapshot) => {
   }
 
   return data.departments || {};
+};
+
+const saveBoardMemo = async (memo) => {
+  const response = await fetch("/api/board-memos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(memo),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to save board memo.");
+  }
+
+  return data;
 };
 
 const formatDateTime = (value) => {
@@ -704,6 +735,8 @@ export default function DepartmentPage() {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [loadingCurrentData, setLoadingCurrentData] = useState(true);
+  const [historicalImports, setHistoricalImports] = useState([]);
+  const [exportingBoardMemo, setExportingBoardMemo] = useState(false);
   const [orgDataStore, setOrgDataStore] = useState({});
   const [insights, setInsights] = useState(
     isExecutiveDashboard
@@ -741,7 +774,7 @@ export default function DepartmentPage() {
           setOrgDataStore(nextStore);
           setInsights(
             departmentId === "executive"
-              ? "Click Fetch Suggestions to generate an organization-wide CEO brief from current-data JSON."
+              ? "Click Fetch Suggestions to generate an organization-wide CEO brief from Supabase JSONB."
               : "Click Fetch Suggestions to generate AI recommendations for this department."
           );
         })
@@ -750,8 +783,14 @@ export default function DepartmentPage() {
           setInsights(`Current data load failed: ${message}`);
         })
         .finally(() => setLoadingCurrentData(false));
+
+      fetchHistoricalDataStore(isExecutiveDashboard ? "" : departmentId)
+        .then(setHistoricalImports)
+        .catch((error) => {
+          console.error("Historical import load failed:", error);
+        });
     });
-  }, [departmentId]);
+  }, [departmentId, isExecutiveDashboard]);
 
   const fetchInsights = useCallback(async (targetDepartmentId = departmentId) => {
     if (!targetDepartmentId || !DEPT_CONFIGS[targetDepartmentId]) {
@@ -809,18 +848,77 @@ export default function DepartmentPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleFileUpload = async (file) => {
+  const handleExportPdf = () => {
+    generateDashboardPdfReport({
+      title: isExecutiveDashboard
+        ? "Executive Operating Intelligence Report"
+        : `${config.title} Intelligence Report`,
+      departmentName: config.title,
+      generatedAt: new Date().toISOString(),
+      insights,
+      metrics: displayedMetrics,
+      chartPanels,
+      isExecutive: isExecutiveDashboard,
+      departmentUpload,
+      storedDepartmentRows,
+      historicalImports,
+    });
+  };
+
+  const handleExportBoardMemo = async () => {
+    setExportingBoardMemo(true);
+    try {
+      const memo = {
+        memoType: "board-memo",
+        title: isExecutiveDashboard
+          ? "Executive Board Memo"
+          : `${config.title} Board Memo`,
+        departmentId,
+        departmentName: config.title,
+        generatedAt: new Date().toISOString(),
+        executiveSummary: insights,
+        recommendation:
+          "Use this memo to align the board on current operating health, decision priorities, and the management actions implied by the latest department data.",
+        risks: chartPanels
+          .flatMap((panel) => panel.data || [])
+          .filter((point) => typeof point.health === "number" && point.health < 70)
+          .slice(0, 5)
+          .map((point) => `${point.period}: score ${Math.round(point.health)}`)
+          .join("\n") || "No quantified risk score below threshold in the current dashboard calculation.",
+        actions:
+          "Review under-target scorecards, assign owners to each gap, refresh department CSVs before the next operating review, and re-run AI synthesis after the data update.",
+        metrics: displayedMetrics,
+        chartPanels,
+        historicalImports,
+      };
+
+      const savedMemo = await saveBoardMemo(memo);
+      generateBoardMemoPdf({
+        ...memo,
+        memoId: savedMemo.id,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to export board memo.";
+      alert(message);
+    } finally {
+      setExportingBoardMemo(false);
+    }
+  };
+
+  const handleFileUpload = async (file, importType = "current-upload") => {
     if (!file) return;
     setUploading(true);
 
     try {
       const parsedCsv = await parseCsvFile(file);
-      const departmentSnapshot = buildDepartmentSnapshot(departmentId, file, parsedCsv);
+      const departmentSnapshot = buildDepartmentSnapshot(departmentId, file, parsedCsv, importType);
       const nextStore = await saveDepartmentSnapshot(departmentSnapshot);
+      const nextHistory = await fetchHistoricalDataStore(isExecutiveDashboard ? "" : departmentId);
 
       setOrgDataStore(nextStore);
-      setInsights("Upload saved to current-data JSON. Click Fetch Suggestions to generate updated AI recommendations.");
-      alert("CSV saved to the current-data folder and organization summary was updated.");
+      setHistoricalImports(nextHistory);
+      setInsights("Upload saved to Supabase JSONB and historical imports. Click Fetch Suggestions to generate updated AI recommendations.");
+      alert("CSV saved to Supabase, historical imports, and the organization summary was updated.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to parse CSV.";
       alert(message);
@@ -837,14 +935,29 @@ export default function DepartmentPage() {
           <h1 className="text-xl font-semibold tracking-tight text-white">{config.title}</h1>
           <p className="text-xs text-zinc-400 mt-1">Strategic Operations Control & Predictive Modeling Matrix</p>
         </div>
-        {!isExecutiveDashboard && (
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            onClick={handleExportPdf}
+            className="inline-flex h-10 w-full items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-500/10 px-4 text-xs font-medium text-indigo-100 transition-colors hover:bg-indigo-500/20 hover:text-white sm:h-9 sm:w-auto"
+          >
+            📄 Export PDF Report
+          </button>
+          <button
+            onClick={handleExportBoardMemo}
+            className="inline-flex h-10 w-full items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 text-xs font-medium text-emerald-100 transition-colors hover:bg-emerald-500/20 hover:text-white sm:h-9 sm:w-auto"
+            disabled={exportingBoardMemo}
+          >
+            {exportingBoardMemo ? "Saving Memo..." : "📝 Export Board Memo"}
+          </button>
+          {!isExecutiveDashboard && (
           <button
             onClick={handleDownloadTemplate}
             className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#18181b] px-4 text-xs font-medium text-zinc-200 border border-[#27272a] hover:bg-[#27272a] hover:text-white transition-colors sm:h-9 sm:w-auto"
           >
             📥 Download CSV Template
           </button>
-        )}
+          )}
+        </div>
       </div>
 
       {metricGlossary.length > 0 && (
@@ -875,9 +988,9 @@ export default function DepartmentPage() {
 
       {!isExecutiveDashboard && (
         <div className="rounded-xl border border-[#27272a] bg-[#121214] p-4 sm:p-5">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Current Data JSON</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Supabase Current Data JSON</h3>
           {loadingCurrentData ? (
-            <p className="mt-3 text-xs text-zinc-500">Loading current-data JSON...</p>
+            <p className="mt-3 text-xs text-zinc-500">Loading Supabase JSONB...</p>
           ) : departmentUpload ? (
             <div className="mt-3 grid gap-3 text-xs text-zinc-400 sm:grid-cols-4">
               <div>
@@ -936,10 +1049,73 @@ export default function DepartmentPage() {
               className="mt-4 w-full max-w-xs text-xs text-zinc-400 file:mr-4 file:rounded file:border file:border-[#27272a] file:bg-[#18181b] file:px-3 file:py-1 file:text-xs file:text-zinc-200 file:hover:bg-[#27272a] cursor-pointer" 
               disabled={uploading}
             />
-            {uploading && <p className="text-xs text-indigo-400 mt-2 animate-pulse">Parsing records into current-data JSON...</p>}
+            {uploading && <p className="text-xs text-indigo-400 mt-2 animate-pulse">Parsing records into Supabase JSONB...</p>}
+          </div>
+
+          <div className="mt-4 rounded-lg border border-[#27272a] bg-[#0f0f11] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Historical Trend Import</h4>
+                <p className="mt-1 text-[11px] leading-5 text-zinc-500">
+                  Import multi-period CSVs to preserve an immutable trend history while refreshing the current dashboard snapshot.
+                </p>
+              </div>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => handleFileUpload(e.target.files[0], "historical-trend-import")}
+                className="w-full max-w-xs text-xs text-zinc-400 file:mr-4 file:rounded file:border file:border-emerald-500/30 file:bg-emerald-500/10 file:px-3 file:py-1 file:text-xs file:text-emerald-100 file:hover:bg-emerald-500/20 cursor-pointer sm:w-auto"
+                disabled={uploading}
+              />
+            </div>
           </div>
         </div>
       )}
+
+      <div className="rounded-xl border border-[#27272a] bg-[#121214] p-4 sm:p-6">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Historical Trend Imports</h3>
+            <p className="mt-1 text-xs text-zinc-500">Immutable Supabase import ledger used for multi-period analysis and board reporting.</p>
+          </div>
+          <div className="text-xs text-zinc-400">{historicalImports.length} imports</div>
+        </div>
+
+        {historicalImports.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-xs">
+              <thead className="border-b border-[#27272a] text-zinc-500">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Department</th>
+                  <th className="py-2 pr-4 font-medium">Type</th>
+                  <th className="py-2 pr-4 font-medium">File</th>
+                  <th className="py-2 pr-4 font-medium">Rows</th>
+                  <th className="py-2 pr-4 font-medium">Period</th>
+                  <th className="py-2 font-medium">Imported</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#202024] text-zinc-300">
+                {historicalImports.slice(0, 12).map((item) => (
+                  <tr key={item.id}>
+                    <td className="py-3 pr-4 font-medium text-zinc-100">{item.departmentName}</td>
+                    <td className="py-3 pr-4 text-zinc-400">{item.importType}</td>
+                    <td className="py-3 pr-4 text-zinc-400">{item.filename}</td>
+                    <td className="py-3 pr-4">{item.recordCount}</td>
+                    <td className="py-3 pr-4 text-zinc-400">
+                      {[item.periodStart, item.periodEnd].filter(Boolean).join(" to ") || "Not detected"}
+                    </td>
+                    <td className="py-3 text-zinc-400">{formatDateTime(item.importedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-[#27272a] p-6 text-center text-xs text-zinc-500">
+            No historical trend imports yet. Upload a multi-period CSV to build the import ledger.
+          </div>
+        )}
+      </div>
 
       {/* OpenAI Executive Synthesis Output Display */}
       <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-b from-[#13121c] to-[#121214] p-4 sm:p-6">
@@ -971,7 +1147,7 @@ export default function DepartmentPage() {
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Organization Data Store</h3>
-              <p className="mt-1 text-xs text-zinc-500">JSON assembled from department CSV uploads in the current-data folder.</p>
+              <p className="mt-1 text-xs text-zinc-500">JSON assembled from department CSV uploads stored in Supabase.</p>
             </div>
             <div className="text-xs text-zinc-400">
               Latest: {loadingCurrentData ? "Loading..." : latestUpload ? formatDateTime(latestUpload.uploadedAt) : "No uploads yet"}
@@ -980,7 +1156,7 @@ export default function DepartmentPage() {
 
           {loadingCurrentData ? (
             <div className="rounded-lg border border-dashed border-[#27272a] p-6 text-center text-xs text-zinc-500">
-              Loading current-data JSON...
+              Loading Supabase JSONB...
             </div>
           ) : storedDepartmentRows.length > 0 ? (
             <div className="overflow-x-auto">

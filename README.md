@@ -5,6 +5,8 @@
 Created by **Suhas Bhairav**  
 Website: **https://suhasbhairav.com**
 
+**Completely open source.** This is an independent personal project released under the MIT License.
+
 ![AI Chief of Staff executive dashboard](screenshot.png)
 
 AI Chief of Staff is an operating intelligence workspace for CEOs. It turns department-level CSV uploads into live executive dashboards, department scorecards, and OpenAI-generated recommendations for the CEO and functional leaders.
@@ -16,11 +18,14 @@ The product is designed around a simple idea: every important department should 
 - Provides dashboards for 13 company functions: Executive, Finance, HR, Legal, IT, Operations, Sales, Marketing, Product, R&D, Customer Support, Risk, and Strategy.
 - Generates CEO-grade CSV templates for each department.
 - Parses uploaded CSV files into structured JSON.
-- Stores current operating data in `frontend/current-data/`.
-- Builds department-specific KPI cards and charts from uploaded data.
-- Builds Executive-level scorecards from the combined department JSON.
+- Stores current operating data in Supabase Postgres using flexible JSONB snapshots.
+- Builds department-specific KPI cards and charts directly from database JSON.
+- Builds Executive-level scorecards from the combined Supabase department JSON.
 - Calls OpenAI only when the user clicks `Fetch Suggestions` or `Fetch Org Suggestions`.
-- Sends summarized dashboard context and current-data JSON to OpenAI for concise operating recommendations.
+- Sends summarized dashboard context and current database JSON to OpenAI for concise operating recommendations.
+- Exports polished PDF reports with a cover page, KPI snapshot, OpenAI synthesis, chart scorecard tables, department data tables, and creator attribution.
+- Preserves historical trend imports in Supabase for multi-period analysis.
+- Exports board memo PDFs and stores board memo metadata in Supabase.
 
 ## Product Philosophy
 
@@ -47,12 +52,15 @@ ai-chief-of-staff/
       departments/[slug]/page.js           # Department + executive dashboards
       api/
         analytics/[department]/route.js    # OpenAI Responses API endpoint
-        current-data/route.js              # File-backed JSON data store API
-    current-data/
-      .gitkeep
-      organization-summary.json            # Generated rollup
-      <department>.json                    # Generated per-department data
+        current-data/route.js              # Supabase JSONB data store API
+    lib/
+      current-data-store.js                # Supabase read/write + org rollup
+      supabase/server.js                   # Server-side Supabase client
     package.json
+
+  supabase/
+    schema.sql                             # Table creation SQL
+    README.md                              # Supabase setup notes
 
   backend/
     main.py                                # FastAPI CSV parsing service scaffold
@@ -68,33 +76,36 @@ ai-chief-of-staff/
 3. The user uploads the CSV in that department dashboard.
 4. The frontend parses the CSV into records.
 5. The frontend posts the structured department snapshot to `/api/current-data`.
-6. The server writes:
-   - `frontend/current-data/<department>.json`
-   - `frontend/current-data/organization-summary.json`
-7. Department dashboards calculate KPI cards and charts from their own JSON.
-8. Executive dashboard calculates org-level scorecards from all department JSON.
-9. OpenAI is called only when the user clicks `Fetch Suggestions`.
+6. The server upserts that snapshot into `department_snapshots` in Supabase.
+7. The server appends the upload to `department_snapshot_history`.
+8. The server rebuilds the `organization_summaries.current` JSONB rollup.
+9. Department dashboards calculate KPI cards and charts from Supabase JSON.
+10. Executive dashboard calculates org-level scorecards from all department JSON.
+11. OpenAI is called only when the user clicks `Fetch Suggestions`.
+12. PDF reports and board memos export from the same live dashboard state.
 
 ## Current Data Store
 
-The project uses a lightweight file-backed store for local development:
+The project uses Supabase Postgres as its database-only persistence layer. Authentication is intentionally not included. Each upload is stored as JSONB so departments can evolve their columns without requiring a migration for every new metric.
 
-```text
-frontend/current-data/
-  finance.json
-  sales.json
-  marketing.json
-  organization-summary.json
+Primary tables:
+
+- `department_snapshots`: one current JSONB snapshot per department.
+- `organization_summaries`: the latest executive rollup generated from all department snapshots.
+- `department_snapshot_history`: immutable historical import ledger for multi-period trend analysis.
+- `board_memos`: saved board memo metadata and JSON content.
+
+Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
+
+Required frontend environment variables:
+
+```bash
+OPENAI_API_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-These generated JSON files are ignored by git:
-
-```gitignore
-frontend/current-data/*.json
-!frontend/current-data/.gitkeep
-```
-
-This keeps local/company data out of source control while preserving the folder structure.
+The Supabase service key is used only inside Next.js route handlers and is never imported into client components.
 
 ## OpenAI Integration
 
@@ -119,14 +130,48 @@ For Executive, the request includes:
 
 - KPI cards
 - Executive scorecard chart points
-- Full organization current-data JSON
+- Full organization Supabase JSONB snapshot
+
+## PDF Reports
+
+Every department dashboard and the Executive dashboard include `Export PDF Report`.
+
+The generated report includes:
+
+- A designed cover page.
+- Report metadata with `Created by Suhas Bhairav` and `https://suhasbhairav.com`.
+- The latest OpenAI synthesis shown in the dashboard.
+- KPI cards from the live dashboard calculations.
+- Chart scorecard source tables.
+- Uploaded department data tables from Supabase JSONB.
+- A methodology page explaining how the report was assembled.
+
+For the best report, upload department CSVs first and click `Fetch Suggestions` before exporting.
+
+## Historical Trend Imports
+
+Department dashboards include a `Historical Trend Import` control for multi-period CSV uploads. Every upload is appended to `department_snapshot_history`, including detected period bounds, filename, row count, headers, sample records, full records, and the complete JSON content.
+
+The dashboard displays a historical import ledger, and PDF reports include the same import history so reviewers can see the data trail behind current trends.
+
+## Board Memo Export
+
+Every dashboard includes `Export Board Memo`.
+
+The board memo workflow:
+
+1. Builds a board-facing summary from the latest OpenAI synthesis, KPI cards, chart scorecards, and historical import ledger.
+2. Saves memo metadata and JSON content to `board_memos`.
+3. Generates a polished PDF memo with a cover page, board narrative, KPI snapshot, chart tables, historical imports, and creator attribution.
 
 ## Required Environment Variables
 
-Create `frontend/.env`:
+Create `frontend/.env.local` or `frontend/.env`:
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_or_secret_key
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -149,7 +194,7 @@ If port `3000` is already occupied, Next.js may choose another port.
 
 ## Backend Setup
 
-The backend is a FastAPI scaffold for CSV ingestion and validation. The current frontend primarily uses the Next.js `/api/current-data` route for local JSON storage, but the backend is available for future API-backed ingestion.
+The backend is a FastAPI scaffold for CSV ingestion and validation. The current frontend primarily uses the Next.js `/api/current-data` route for Supabase-backed JSONB storage, but the backend is available for future API-backed ingestion.
 
 ```bash
 cd backend
@@ -298,7 +343,7 @@ Each department has a dedicated analytics model.
 
 ## Executive Dashboard
 
-The Executive dashboard rolls up the current-data JSON into four CEO scorecards:
+The Executive dashboard rolls up Supabase department JSON into four CEO scorecards:
 
 1. Value Creation and Cash
    - Rule of 40
@@ -341,10 +386,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 
 ## Development Notes
 
-- Generated current-data JSON is local and ignored by git.
-- The OpenAI API key must live in `frontend/.env`.
-- The Next.js API route writes files to `frontend/current-data`, so this setup is intended for local development or controlled internal deployment.
-- For production multi-user use, replace the file-backed current-data API with a database such as Postgres, Supabase, Neon, or DynamoDB.
+- The OpenAI API key must live in `frontend/.env.local` or `frontend/.env`.
+- Supabase credentials must live in `frontend/.env.local` or `frontend/.env`.
+- Department data is stored in Supabase JSONB tables, not source-controlled files.
 - For production security, add authentication, RBAC, audit logging, upload limits, schema validation, and encryption at rest.
 
 ## Verification
@@ -364,24 +408,23 @@ Expected routes:
 /departments/executive           Executive dashboard
 /departments/finance             Finance dashboard
 /departments/sales               Sales dashboard
-/api/current-data                 Current JSON store
+/api/current-data                 Supabase JSONB store
+/api/historical-data              Supabase historical import ledger
+/api/board-memos                  Supabase board memo storage
 /api/analytics/[department]       OpenAI analysis endpoint
 ```
 
 ## Roadmap
 
-- Add persistent database storage.
 - Add user authentication and role-based access control.
 - Add schema validation per department.
-- Add historical trend imports for multi-period analysis.
-- Add board memo export.
 - Add Slack/email action routing to department owners.
 - Add automated anomaly detection before OpenAI synthesis.
 - Add permissioned multi-company workspaces.
 
 ## Status
 
-This is a local-first MVP of an AI operating system for company leadership. It is designed to be credible in front of founders, operators, investors, and technical reviewers, while remaining small enough to iterate quickly.
+This is a completely open-source, local-first MVP of an AI operating system for company leadership. It is an independent personal project designed to be credible in front of founders, operators, investors, and technical reviewers, while remaining small enough to iterate quickly.
 
 ## License
 
