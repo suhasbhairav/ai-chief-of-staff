@@ -1,6 +1,6 @@
 # Supabase Database Setup
 
-AI Chief of Staff uses Supabase Postgres as a database-only persistence layer. There is no Supabase Auth requirement.
+AICoS - AI Chief of Staff uses Supabase Postgres as a database-only persistence layer. There is no Supabase Auth requirement.
 
 ## 1. Create Tables
 

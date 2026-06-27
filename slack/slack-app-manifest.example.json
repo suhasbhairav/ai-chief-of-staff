@@ -1,12 +1,12 @@
 {
   "display_information": {
-    "name": "AI Chief of Staff",
-    "description": "Live Slack workspace integration for AI Chief of Staff.",
+    "name": "AICoS - AI Chief of Staff",
+    "description": "Live Slack workspace integration for AICoS - AI Chief of Staff.",
     "background_color": "#111827"
   },
   "features": {
     "bot_user": {
-      "display_name": "AI Chief of Staff",
+      "display_name": "AICoS",
       "always_online": true
     }
   },

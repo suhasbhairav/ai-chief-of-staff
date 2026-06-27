@@ -58,7 +58,7 @@ export default function RootLayout({ children }) {
             }`}
           >
             <div className="mr-2.5 h-6 w-6 rounded-md bg-indigo-500"></div>
-            <span className="font-semibold tracking-tight text-sm text-zinc-200">AI Chief of Staff</span>
+            <span className="font-semibold tracking-tight text-sm text-zinc-200">AICoS - AI Chief of Staff</span>
           </Link>
 
           <nav className="space-y-6">

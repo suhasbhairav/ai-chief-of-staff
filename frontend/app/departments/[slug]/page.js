@@ -832,7 +832,7 @@ export default function DepartmentPage() {
       setInsights(data.analysis || "No executive insights returned for this division layout.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown analytics error";
-      setInsights(`Error generating Chief of Staff synthesis: ${message}`);
+      setInsights(`Error generating AICoS synthesis: ${message}`);
     } finally {
       setLoadingInsights(false);
     }
@@ -1122,7 +1122,7 @@ export default function DepartmentPage() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-sm">✨</span>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-300">Chief of Staff Intelligence Synthesis</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-300">AICoS Intelligence Synthesis</h3>
           </div>
           <button 
             onClick={() => fetchInsights(departmentId)} 

@@ -1,6 +1,6 @@
 <div align="center">
 
-# AI Chief of Staff
+# AICoS - AI Chief of Staff
 
 ### The open-source AI operating system for CEOs
 
@@ -26,7 +26,7 @@ Independent personal project. Completely open source under the MIT License.
 
 <br />
 
-![AI Chief of Staff executive dashboard](screenshot.png)
+![AICoS - AI Chief of Staff executive dashboard](screenshot.png)
 
 </div>
 
@@ -34,7 +34,7 @@ Independent personal project. Completely open source under the MIT License.
 
 ## Why This Exists
 
-AI Chief of Staff is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, and OpenAI-generated recommendations.
+AICoS - AI Chief of Staff is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, and OpenAI-generated recommendations.
 
 The product is designed around a simple idea: every important department should report the metrics a serious CEO would actually inspect, and the Executive dashboard should synthesize those signals into company-level operating judgment.
 
