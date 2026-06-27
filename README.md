@@ -89,7 +89,7 @@ The product is designed around a simple idea: every important department should 
         <img src="https://img.shields.io/badge/Events%20API-E01E5A?style=flat-square" />
       </p>
       <p>Real Slack OAuth, Web API, Events API, signed request verification, task harvesting, and message snapshots.</p>
-      <p><strong>Output:</strong> Bond-style company action tracking.</p>
+      <p><strong>Output:</strong> Robust company action tracking.</p>
     </td>
     <td width="33%" valign="top" bgcolor="#FED7AA">
       <h3>Enterprise Guardrails</h3>
