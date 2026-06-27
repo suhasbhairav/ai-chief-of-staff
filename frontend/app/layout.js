@@ -1,0 +1,96 @@
+"use client";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import './globals.css';
+
+const DEPARTMENTS = [
+  { id: 'executive', name: 'Executive / Office of the CEO', icon: '👑' },
+  { id: 'finance', name: 'Finance & Treasury', icon: '💵' },
+  { id: 'hr', name: 'Human Resources', icon: '👥' },
+  { id: 'legal', name: 'Legal & Compliance', icon: '⚖️' },
+  { id: 'it', name: 'Information Technology', icon: '💻' },
+  { id: 'operations', name: 'Operations & Supply Chain', icon: '⚙️' },
+  { id: 'sales', name: 'Sales & Revenue', icon: '📈' },
+  { id: 'marketing', name: 'Marketing & Comm', icon: '📣' },
+  { id: 'product', name: 'Product Management', icon: '📦' },
+  { id: 'rd', name: 'R&D & Innovation', icon: '🧪' },
+  { id: 'customer-service', name: 'Customer Support', icon: '🤝' },
+  { id: 'risk', name: 'Risk & Internal Audit', icon: '🛡️' },
+  { id: 'strategy', name: 'Corporate Strategy', icon: '🎯' }
+];
+
+export default function RootLayout({ children }) {
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isHome = pathname === '/';
+
+  return (
+    <html lang="en">
+      <body className="flex h-screen bg-[#09090b] text-[#f4f4f5] antialiased">
+        {/* Mobile Sidebar Toggle Button */}
+        <button 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle department navigation"
+          className="fixed left-4 top-4 z-50 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#27272a] bg-[#121214] text-zinc-400 shadow-lg md:hidden hover:bg-[#18181b]"
+        >
+          {sidebarOpen ? "×" : "☰"}
+        </button>
+
+        {sidebarOpen && (
+          <button
+            aria-label="Close navigation"
+            className="fixed inset-0 z-30 bg-black/60 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar Container */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto border-r border-[#27272a] bg-[#09090b] p-4 transition-transform duration-200 ease-in-out md:static md:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <Link
+            href="/"
+            onClick={() => setSidebarOpen(false)}
+            className={`mb-6 flex items-center rounded-md px-2 py-1.5 transition-colors hover:bg-[#121214] ${
+              isHome ? 'bg-[#121214]' : ''
+            }`}
+          >
+            <div className="mr-2.5 h-6 w-6 rounded-md bg-indigo-500"></div>
+            <span className="font-semibold tracking-tight text-sm text-zinc-200">AI Chief of Staff</span>
+          </Link>
+
+          <nav className="space-y-1">
+            <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">Departments</div>
+            {DEPARTMENTS.map((dept) => {
+              const isActive = pathname === `/departments/${dept.id}`;
+              return (
+                <Link
+                  key={dept.id}
+                  href={`/departments/${dept.id}`}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                    isActive 
+                      ? 'bg-[#18181b] text-white shadow-sm border border-[#27272a]' 
+                      : 'text-zinc-400 hover:bg-[#121214] hover:text-zinc-200'
+                  }`}
+                >
+                  <span className="mr-2 text-sm">{dept.icon}</span>
+                  <span className="truncate">{dept.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Main Workspace Frame */}
+        <main className="flex-1 overflow-y-auto bg-[#0c0c0e] px-4 pb-6 pt-16 md:px-8 md:py-6">
+          <div className="mx-auto max-w-6xl">
+            {children}
+          </div>
+        </main>
+      </body>
+    </html>
+  );
+}

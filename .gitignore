@@ -1,0 +1,98 @@
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.local.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.local.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Node / Next.js
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+dist/
+frontend/dist/
+build/
+frontend/build/
+.vercel/
+frontend/.vercel/
+
+# Node package manager caches and logs
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript / Next generated metadata
+*.tsbuildinfo
+next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/ENV/
+
+# Python packaging and test output
+*.egg-info/
+.eggs/
+build/
+dist/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.tox/
+.nox/
+
+# Runtime files, logs, and local databases
+*.log
+logs/
+*.pid
+*.sqlite
+*.sqlite3
+*.db
+
+# Local generated app data
+frontend/current-data/*.json
+!frontend/current-data/.gitkeep
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+.cache/

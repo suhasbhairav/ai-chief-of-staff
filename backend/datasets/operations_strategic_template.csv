@@ -1,0 +1,2 @@
+Month,Throughput_Units,Demand_Units,On_Time_Delivery,Inventory_Turns,Defect_Rate_PPM,Gross_Yield,Operating_Cost,Unit_Cost,Supplier_OTIF
+2026-06,125000,131000,98.4,14.2,120,99.1,89000,0.71,96.8
