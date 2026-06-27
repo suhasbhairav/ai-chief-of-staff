@@ -335,8 +335,8 @@ function IntegrationsPageContent() {
           <span>🔒</span> Data Control & Privacy
         </h3>
         <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-          Aegis processes emails, calendar slots, and chat channels strictly to map tasks and priorities. 
-          All metrics are loaded directly into RAM, and database snapshots are encrypted. We never train public AI models on your data, nor sell it. 
+          The application processes emails, calendar slots, and chat channels strictly to map tasks and priorities. 
+          All metrics are loaded directly into RAM, and database snapshots are encrypted. It never trains public AI models on your data, nor sell it. 
           You can sever integrations or purge your workspace data at any time from this console.
         </p>
       </div>
