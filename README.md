@@ -1,48 +1,145 @@
+<div align="center">
+
 # AI Chief of Staff
 
-**The AI operating system for CEOs: turn every department's metrics into board-ready decisions.**
+### The open-source AI operating system for CEOs
 
-Created by **Suhas Bhairav**  
-Website: **https://suhasbhairav.com**
+Turn every department's metrics into board-ready decisions, Slack-aware action tracking, executive scorecards, PDF reports, board memos, and guarded AI recommendations.
 
-**Completely open source.** This is an independent personal project released under the MIT License.
+<br />
+
+<a href="https://suhasbhairav.com">
+  <img alt="Created by Suhas Bhairav" src="https://img.shields.io/badge/created%20by-Suhas%20Bhairav-7c3aed?style=for-the-badge" />
+</a>
+<img alt="License MIT" src="https://img.shields.io/badge/license-MIT-16a34a?style=for-the-badge" />
+<img alt="Open Source" src="https://img.shields.io/badge/completely-open%20source-0ea5e9?style=for-the-badge" />
+<img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs" />
+<img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=for-the-badge&logo=supabase" />
+<img alt="Slack" src="https://img.shields.io/badge/Slack-live%20integration-4A154B?style=for-the-badge&logo=slack" />
+<img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
+
+<br />
+<br />
+
+**Created by [Suhas Bhairav](https://suhasbhairav.com)**  
+Independent personal project. Completely open source under the MIT License.
+
+<br />
 
 ![AI Chief of Staff executive dashboard](screenshot.png)
 
-AI Chief of Staff is an operating intelligence workspace for CEOs. It turns department-level CSV uploads into live executive dashboards, department scorecards, and OpenAI-generated recommendations for the CEO and functional leaders.
+</div>
 
-The product is designed around a simple idea: every important department should report the metrics a serious CEO would actually inspect, and the Executive dashboard should synthesize those metrics into company-level operating judgment.
+---
 
-## What It Does
+## Why This Exists
 
-- Provides dashboards for 13 company functions: Executive, Finance, HR, Legal, IT, Operations, Sales, Marketing, Product, R&D, Customer Support, Risk, and Strategy.
-- Generates CEO-grade CSV templates for each department.
-- Parses uploaded CSV files into structured JSON.
-- Stores current operating data in Supabase Postgres using flexible JSONB snapshots.
-- Builds department-specific KPI cards and charts directly from database JSON.
-- Builds Executive-level scorecards from the combined Supabase department JSON.
-- Calls OpenAI only when the user clicks `Fetch Suggestions` or `Fetch Org Suggestions`.
-- Sends summarized dashboard context and current database JSON to OpenAI for concise operating recommendations.
-- Exports polished PDF reports with a cover page, KPI snapshot, OpenAI synthesis, chart scorecard tables, department data tables, and creator attribution.
-- Preserves historical trend imports in Supabase for multi-period analysis.
-- Exports board memo PDFs and stores board memo metadata in Supabase.
-- Connects to a real Slack workspace through Slack OAuth, Web API, Events API, and signed request verification.
-- Protects OpenAI calls with enterprise guardrails for prompt injection, jailbreaks, secret leakage, oversized payloads, and unsafe task actions.
+AI Chief of Staff is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, and OpenAI-generated recommendations.
 
-## Product Philosophy
+The product is designed around a simple idea: every important department should report the metrics a serious CEO would actually inspect, and the Executive dashboard should synthesize those signals into company-level operating judgment.
 
-This is not a generic BI dashboard. The application is built around metrics that CEOs, CFOs, operators, and investors actually care about:
+---
 
-- Growth quality: ARR, revenue growth, net revenue retention, Rule of 40.
-- Cash discipline: burn multiple, runway, free cash flow margin, operating expenses.
-- GTM efficiency: qualified pipeline, bookings, CAC, LTV:CAC, CAC payback, win rate.
-- Product health: activation, retention, adoption, NPS, P1 bugs, velocity.
-- Customer health: CSAT, NPS, backlog, escalation rate, response/resolution time.
-- Operational execution: throughput, yield, defect rate, on-time delivery, inventory turns.
-- Risk posture: enterprise risk, audit score, control coverage, unmitigated risks.
-- Strategic leverage: TAM coverage, market share, partnership revenue, M&A pipeline.
+## Product Cards
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>Executive Command Center</h3>
+      <p>CEO-level rollups across value creation, cash, GTM efficiency, customer/product health, risk, and execution posture.</p>
+      <p><strong>Output:</strong> board-ready operating insight.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>Department Dashboards</h3>
+      <p>Finance, Sales, Marketing, Product, HR, Legal, IT, Operations, Support, Risk, Strategy, R&D, and Executive views.</p>
+      <p><strong>Output:</strong> KPI cards and 3-5 charts per function.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>AI Suggestions On Demand</h3>
+      <p>OpenAI calls happen only when a user clicks <code>Fetch Suggestions</code> or <code>Fetch Org Suggestions</code>.</p>
+      <p><strong>Output:</strong> concise action recommendations.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>Supabase JSONB Store</h3>
+      <p>Flexible department snapshots are stored as JSONB, so changing columns does not require schema churn.</p>
+      <p><strong>Output:</strong> scalable operating data.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>Live Slack Workspace</h3>
+      <p>Real Slack OAuth, Web API, Events API, signed request verification, task harvesting, and message snapshots.</p>
+      <p><strong>Output:</strong> Bond-style company action tracking.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>Enterprise Guardrails</h3>
+      <p>All OpenAI calls are protected against prompt injection, jailbreaks, secret leakage, and unsafe task mutations.</p>
+      <p><strong>Output:</strong> safer AI operations.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>Historical Trend Imports</h3>
+      <p>Every CSV upload is appended to an immutable Supabase import ledger for multi-period analysis.</p>
+      <p><strong>Output:</strong> historical data trail.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>PDF Reports</h3>
+      <p>Beautiful reports include cover pages, AI synthesis, KPI snapshots, chart tables, department tables, and methodology.</p>
+      <p><strong>Output:</strong> polished management reports.</p>
+    </td>
+    <td width="33%" valign="top">
+      <h3>Board Memo Export</h3>
+      <p>Generates board-facing PDFs and stores memo metadata/content in Supabase.</p>
+      <p><strong>Output:</strong> investor-ready narrative.</p>
+    </td>
+  </tr>
+</table>
+
+---
+
+## Core Capabilities
+
+| Area | What It Does | Storage / Engine |
+| --- | --- | --- |
+| Executive dashboard | Summarizes all departments into CEO scorecards | Supabase JSONB |
+| Department dashboards | Calculates KPI cards and charts from uploaded CSVs | Browser CSV parser + Supabase |
+| AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
+| Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
+| Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
+| Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
+| PDF reports | Exports dashboard state and OpenAI explanation | `jspdf` + `jspdf-autotable` |
+| Board memos | Saves and exports board-facing memo narratives | `board_memos` |
+| Guardrails | Blocks jailbreaks and wraps untrusted data | Shared OpenAI guardrail layer |
+
+---
+
+## CEO Metrics Philosophy
+
+This is not a generic BI dashboard. It focuses on the metrics CEOs, CFOs, operators, and investors actually care about:
+
+<table>
+  <tr>
+    <td><strong>Growth Quality</strong><br />ARR, revenue growth, NRR, Rule of 40</td>
+    <td><strong>Cash Discipline</strong><br />burn multiple, runway, FCF margin, operating expenses</td>
+  </tr>
+  <tr>
+    <td><strong>GTM Efficiency</strong><br />pipeline, bookings, CAC, LTV:CAC, CAC payback, win rate</td>
+    <td><strong>Product Health</strong><br />activation, retention, adoption, NPS, P1 bugs, velocity</td>
+  </tr>
+  <tr>
+    <td><strong>Customer Health</strong><br />CSAT, NPS, backlog, escalation rate, response/resolution time</td>
+    <td><strong>Operational Execution</strong><br />throughput, yield, defect rate, on-time delivery, inventory turns</td>
+  </tr>
+  <tr>
+    <td><strong>Risk Posture</strong><br />enterprise risk, audit score, control coverage, unmitigated risks</td>
+    <td><strong>Strategic Leverage</strong><br />TAM coverage, market share, partnerships, M&A pipeline</td>
+  </tr>
+</table>
 
 The Executive dashboard intentionally avoids naive technical metrics like row count or column count as core charts. Those are relegated to the data-store table. Executive charts focus on operating outcomes.
+
+---
 
 ## Architecture
 
@@ -52,13 +149,21 @@ ai-chief-of-staff/
     app/
       page.js                              # Home command center
       departments/[slug]/page.js           # Department + executive dashboards
+      slack/page.js                        # Live Slack workspace UI
+      todo/page.js                         # Master To-Do command center
+      integrations/page.js                 # Slack integration hub
       api/
-        analytics/[department]/route.js    # OpenAI Responses API endpoint
-        current-data/route.js              # Supabase JSONB data store API
+        analytics/[department]/route.js    # Guarded OpenAI recommendations
+        current-data/route.js              # Supabase JSONB current store
+        historical-data/route.js           # Historical trend import ledger
+        board-memos/route.js               # Board memo persistence
+        slack/...                          # Slack OAuth, events, channels
+        todo/route.js                      # Master To-Do sync and mutation
     lib/
       current-data-store.js                # Supabase read/write + org rollup
+      openai/guardrails.js                 # Enterprise AI guardrails
+      slack/server.js                      # Slack OAuth/API helpers
       supabase/server.js                   # Server-side Supabase client
-    package.json
 
   supabase/
     schema.sql                             # Table creation SQL
@@ -68,137 +173,102 @@ ai-chief-of-staff/
     slack-app-manifest.example.json        # Slack app manifest template
 
   backend/
-    main.py                                # FastAPI CSV parsing service scaffold
-
-  .gitignore
-  README.md
+    main.py                                # FastAPI CSV parsing scaffold
 ```
+
+---
 
 ## Data Flow
 
+```mermaid
+flowchart LR
+  A[Department CSV Upload] --> B[Next.js API]
+  B --> C[Supabase department_snapshots]
+  B --> D[Supabase department_snapshot_history]
+  C --> E[Executive Rollup]
+  D --> F[Historical Trend Ledger]
+  E --> G[CEO Dashboard]
+  G --> H[Guarded OpenAI Synthesis]
+  H --> I[PDF Report / Board Memo]
+  J[Slack Events API] --> K[Task Harvester]
+  K --> L[Master To-Do]
+```
+
 1. A department user downloads a CSV template.
-2. The user fills the CSV with operating data.
-3. The user uploads the CSV in that department dashboard.
-4. The frontend parses the CSV into records.
-5. The frontend posts the structured department snapshot to `/api/current-data`.
-6. The server upserts that snapshot into `department_snapshots` in Supabase.
-7. The server appends the upload to `department_snapshot_history`.
-8. The server rebuilds the `organization_summaries.current` JSONB rollup.
-9. Department dashboards calculate KPI cards and charts from Supabase JSON.
-10. Executive dashboard calculates org-level scorecards from all department JSON.
-11. OpenAI is called only when the user clicks `Fetch Suggestions`.
-12. PDF reports and board memos export from the same live dashboard state.
+2. The user uploads operating data in that department dashboard.
+3. The frontend parses the CSV into records.
+4. `/api/current-data` upserts the current department snapshot.
+5. The same upload is appended to the historical import ledger.
+6. Executive rollups calculate org-level scorecards.
+7. OpenAI recommendations are generated only on explicit button clicks.
+8. PDF reports and board memos export from the live dashboard state.
+9. Slack events and channel sync harvest commitments into the Master To-Do.
 
-## Current Data Store
+---
 
-The project uses Supabase Postgres as its database-only persistence layer. Authentication is intentionally not included. Each upload is stored as JSONB so departments can evolve their columns without requiring a migration for every new metric.
+## Supabase Data Model
 
 Primary tables:
 
-- `department_snapshots`: one current JSONB snapshot per department.
-- `organization_summaries`: the latest executive rollup generated from all department snapshots.
-- `department_snapshot_history`: immutable historical import ledger for multi-period trend analysis.
-- `board_memos`: saved board memo metadata and JSON content.
-- `slack_installations`: active Slack workspace installs and bot tokens.
-- `slack_events`: signed Slack event webhook ledger.
-- `slack_message_snapshots`: fetched Slack message snapshots for task harvesting and auditability.
+| Table | Purpose |
+| --- | --- |
+| `department_snapshots` | One current JSONB snapshot per department |
+| `organization_summaries` | Latest executive rollup and summary content |
+| `department_snapshot_history` | Immutable historical import ledger |
+| `board_memos` | Saved board memo metadata and JSON content |
+| `slack_installations` | Active Slack workspace installs and bot tokens |
+| `slack_events` | Signed Slack Events API webhook ledger |
+| `slack_message_snapshots` | Slack channel/DM message snapshots |
 
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 
-Required frontend environment variables:
-
-```bash
-OPENAI_API_KEY=
-NEXT_PUBLIC_SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_APP_URL=
-SLACK_CLIENT_ID=
-SLACK_CLIENT_SECRET=
-SLACK_SIGNING_SECRET=
-```
-
-The Supabase service key is used only inside Next.js route handlers and is never imported into client components.
-
-## OpenAI Integration
-
-The analytics route uses the official OpenAI SDK:
-
-```js
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: process.env["OPENAI_API_KEY"],
-});
-```
-
-The application uses `client.responses.create(...)` to generate operating recommendations.
-
-OpenAI calls are not made automatically on page load. They happen only when:
-
-- Department page: user clicks `Fetch Suggestions`
-- Executive page: user clicks `Fetch Org Suggestions`
-
-For Executive, the request includes:
-
-- KPI cards
-- Executive scorecard chart points
-- Full organization Supabase JSONB snapshot
+---
 
 ## Enterprise AI Guardrails
 
 All OpenAI API calls use [frontend/lib/openai/guardrails.js](frontend/lib/openai/guardrails.js).
 
-The guardrail layer provides:
+<table>
+  <tr>
+    <td><strong>Prompt Injection Defense</strong><br />Blocks direct jailbreak and secret-exfiltration prompts before model calls.</td>
+    <td><strong>Secret Redaction</strong><br />Redacts common API key, Slack token, JWT, password, and service-role patterns.</td>
+  </tr>
+  <tr>
+    <td><strong>Untrusted Data Wrapping</strong><br />Slack messages, CSV-derived JSON, tasks, and dashboards are marked as evidence, not instructions.</td>
+    <td><strong>Payload Caps</strong><br />Normalizes and truncates oversized inputs before OpenAI calls.</td>
+  </tr>
+  <tr>
+    <td><strong>Guarded Responses API</strong><br />All model calls go through <code>guardedResponsesCreate</code>.</td>
+    <td><strong>Action Validation</strong><br />Task resolve/delegate/add actions are validated before mutation.</td>
+  </tr>
+</table>
 
-- Prompt-injection and jailbreak detection for direct user/Slack messages.
-- Redaction for common secret/token/API key patterns.
-- Input normalization and payload size caps before model calls.
-- Explicit untrusted-data wrappers around Slack messages, CSV-derived JSON, task titles, and dashboard snapshots.
-- System-level instructions that prevent following instructions embedded inside retrieved data.
-- Guarded Responses API calls through `guardedResponsesCreate`.
-- JSON extraction checks for model-generated task harvesting.
-- Action validation before resolving, delegating, or adding tasks.
+If a direct request resembles a jailbreak or credential-exfiltration attempt, the API blocks it before it reaches OpenAI.
 
-If a direct request resembles a jailbreak or secret-exfiltration attempt, the API blocks it before it reaches OpenAI.
+---
 
 ## Slack Integration
 
 This is a real Slack integration, not a simulator.
 
-It supports:
-
-- Slack OAuth install flow through `/api/integrations/slack/authorize`.
-- OAuth callback and token exchange through `/api/integrations/slack/callback`.
-- Bot token storage in Supabase `slack_installations`.
-- Live channel and DM listing through Slack `conversations.list`.
-- Live message history through Slack `conversations.history`.
-- Posting messages through Slack `chat.postMessage`.
-- Signed Events API handling at `/api/slack/events`.
-- DM replies from the AI Chief of Staff inside Slack.
-- Channel task harvesting from Slack messages into the Master To-Do list.
-- Slack message snapshot storage in Supabase.
+<table>
+  <tr>
+    <td><strong>OAuth</strong><br /><code>/api/integrations/slack/authorize</code> and callback token exchange.</td>
+    <td><strong>Events API</strong><br />Signed request verification at <code>/api/slack/events</code>.</td>
+  </tr>
+  <tr>
+    <td><strong>Web API</strong><br /><code>conversations.list</code>, <code>conversations.history</code>, <code>chat.postMessage</code>.</td>
+    <td><strong>Task Harvesting</strong><br />Slack messages are analyzed and converted into Master To-Do items.</td>
+  </tr>
+</table>
 
 Create a Slack app using [slack/slack-app-manifest.example.json](slack/slack-app-manifest.example.json), replacing `YOUR_APP_DOMAIN.com` with your deployed app domain.
 
-Required Slack env vars:
-
-```bash
-NEXT_PUBLIC_APP_URL=https://your-app-domain.com
-SLACK_CLIENT_ID=your_slack_client_id
-SLACK_CLIENT_SECRET=your_slack_client_secret
-SLACK_SIGNING_SECRET=your_slack_signing_secret
-```
-
-Slack redirect URL:
+Required Slack URLs:
 
 ```text
-https://your-app-domain.com/api/integrations/slack/callback
-```
-
-Slack Events API request URL:
-
-```text
-https://your-app-domain.com/api/slack/events
+Redirect URL: https://your-app-domain.com/api/integrations/slack/callback
+Events URL:   https://your-app-domain.com/api/slack/events
 ```
 
 Required bot scopes:
@@ -233,41 +303,46 @@ message.mpim
 
 After install, open `/integrations` and connect Slack. Then use `/slack` for the live workspace view, `/todo` to sync harvested commitments, and Slack DMs/app mentions to talk to Aegis from inside Slack.
 
-## PDF Reports
+---
 
-Every department dashboard and the Executive dashboard include `Export PDF Report`.
+## Reports And Board Memos
 
-The generated report includes:
-
-- A designed cover page.
-- Report metadata.
-- The latest OpenAI synthesis shown in the dashboard.
-- KPI cards from the live dashboard calculations.
-- Chart scorecard source tables.
-- Uploaded department data tables from Supabase JSONB.
-- A methodology page explaining how the report was assembled.
+<table>
+  <tr>
+    <td width="50%">
+      <h3>PDF Reports</h3>
+      <ul>
+        <li>Designed cover page</li>
+        <li>OpenAI synthesis</li>
+        <li>KPI cards</li>
+        <li>Chart source tables</li>
+        <li>Department data tables</li>
+        <li>Historical imports</li>
+        <li>Methodology</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h3>Board Memo Export</h3>
+      <ul>
+        <li>Board-facing narrative</li>
+        <li>CEO recommendations</li>
+        <li>Risk summary</li>
+        <li>Operating actions</li>
+        <li>Saved metadata in Supabase</li>
+        <li>Created by Suhas Bhairav</li>
+        <li>Website attribution</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
 For the best report, upload department CSVs first and click `Fetch Suggestions` before exporting.
 
-## Historical Trend Imports
+---
 
-Department dashboards include a `Historical Trend Import` control for multi-period CSV uploads. Every upload is appended to `department_snapshot_history`, including detected period bounds, filename, row count, headers, sample records, full records, and the complete JSON content.
+## Environment Variables
 
-The dashboard displays a historical import ledger, and PDF reports include the same import history so reviewers can see the data trail behind current trends.
-
-## Board Memo Export
-
-Every dashboard includes `Export Board Memo`.
-
-The board memo workflow:
-
-1. Builds a board-facing summary from the latest OpenAI synthesis, KPI cards, chart scorecards, and historical import ledger.
-2. Saves memo metadata and JSON content to `board_memos`.
-3. Generates a polished PDF memo with a cover page, board narrative, KPI snapshot, chart tables, historical imports, and creator attribution.
-
-## Required Environment Variables
-
-Create `frontend/.env.local` or `frontend/.env`:
+Create `frontend/.env.local` or configure the same variables in Vercel:
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
@@ -281,7 +356,9 @@ SLACK_SIGNING_SECRET=your_slack_signing_secret
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
 
-## Frontend Setup
+---
+
+## Quick Start
 
 ```bash
 cd frontend
@@ -295,11 +372,19 @@ Open:
 http://localhost:3000
 ```
 
-If port `3000` is already occupied, Next.js may choose another port.
+Production check:
 
-## Backend Setup
+```bash
+cd frontend
+npm run lint
+npm run build
+```
 
-The backend is a FastAPI scaffold for CSV ingestion and validation. The current frontend primarily uses the Next.js `/api/current-data` route for Supabase-backed JSONB storage, but the backend is available for future API-backed ingestion.
+---
+
+## Backend Scaffold
+
+The backend is a FastAPI scaffold for CSV ingestion and validation. The current frontend primarily uses Next.js API routes for Supabase-backed JSONB storage, but the backend is available for future API-backed ingestion.
 
 ```bash
 cd backend
@@ -315,166 +400,49 @@ Health check:
 GET http://127.0.0.1:8000/health
 ```
 
-CSV upload endpoint:
-
-```text
-POST http://127.0.0.1:8000/api/v1/departments/{department_id}/upload
-```
-
-## Available Scripts
-
-From `frontend/`:
-
-```bash
-npm run dev      # Start Next.js development server
-npm run build    # Production build
-npm run start    # Start production server
-npm run lint     # Run ESLint
-```
+---
 
 ## Department Metrics
 
-Each department has a dedicated analytics model.
+<table>
+  <tr>
+    <td><strong>Finance</strong><br />ARR, revenue growth, margin, FCF, cash, runway, burn multiple</td>
+    <td><strong>Sales</strong><br />pipeline, bookings, ARR won, win rate, quota, churn-risk ARR</td>
+  </tr>
+  <tr>
+    <td><strong>Marketing</strong><br />spend, MQL, SQL, CAC, LTV, CAC payback, ROAS</td>
+    <td><strong>Product</strong><br />active users, activation, retention, NPS, velocity, P1 bugs</td>
+  </tr>
+  <tr>
+    <td><strong>Operations</strong><br />throughput, demand, delivery, inventory, defects, unit cost</td>
+    <td><strong>HR</strong><br />headcount, attrition, eNPS, revenue per employee, time to hire</td>
+  </tr>
+  <tr>
+    <td><strong>Support</strong><br />tickets, first response, resolution time, CSAT, NPS, backlog</td>
+    <td><strong>Risk</strong><br />risk score, controls, audit score, mitigations, security findings</td>
+  </tr>
+  <tr>
+    <td><strong>Strategy</strong><br />TAM coverage, market share, partnerships, competitive win rate</td>
+    <td><strong>Legal / IT / R&D</strong><br />contracts, compliance, uptime, cloud spend, IP, experiments</td>
+  </tr>
+</table>
 
-### Finance
-
-- ARR
-- Revenue growth
-- Gross margin
-- Free cash flow margin
-- Operating expenses
-- Cash balance
-- Net new ARR
-- Burn multiple
-- Runway
-- Working capital
-
-### Sales
-
-- Pipeline created
-- Qualified pipeline
-- Bookings
-- ARR won
-- Win rate
-- Sales cycle
-- Quota attainment
-- Forecast commit
-- Churn-risk ARR
-
-### Marketing
-
-- Spend
-- MQLs
-- SQLs
-- Pipeline created
-- CAC
-- LTV
-- CAC payback
-- Conversion rate
-- ROAS
-- Brand demand
-
-### Product
-
-- Active users
-- Activation
-- 30-day retention
-- NPS
-- Velocity
-- P1 bugs
-- Cycle time
-- Feature adoption
-- ARR influenced
-
-### Operations
-
-- Throughput
-- Demand
-- On-time delivery
-- Inventory turns
-- Defect rate
-- Gross yield
-- Operating cost
-- Unit cost
-- Supplier OTIF
-
-### HR
-
-- Headcount
-- Open roles
-- Attrition
-- eNPS
-- Revenue per employee
-- Offer acceptance
-- Time to hire
-- Diversity index
-- Performance index
-
-### Customer Support
-
-- Tickets created
-- Tickets resolved
-- First response time
-- Resolution time
-- CSAT
-- NPS
-- Escalation rate
-- Backlog
-- Retention-risk accounts
-
-### Risk
-
-- Enterprise risk score
-- Control coverage
-- Audit score
-- Unmitigated risks
-- Mitigated risks
-- Open audit items
-- Security findings
-- Operational loss
-- Compliance breaches
-
-### Strategy
-
-- Strategic pipeline value
-- TAM coverage
-- Market share
-- Synergy score
-- Diligence risk
-- Partnership revenue
-- Competitive win rate
-- Strategic initiatives on track
-- M&A targets
+---
 
 ## Executive Dashboard
 
 The Executive dashboard rolls up Supabase department JSON into four CEO scorecards:
 
-1. Value Creation and Cash
-   - Rule of 40
-   - Net revenue retention
-   - Gross margin
-   - Runway
-
-2. GTM Efficiency
-   - Qualified pipeline
-   - Bookings
-   - CAC payback
-   - Win rate
-
-3. Customer and Product Health
-   - 30-day retention
-   - NPS
-   - CSAT
-   - Activation
-
-4. Risk and Execution Posture
-   - Enterprise risk
-   - Audit score
-   - On-time delivery
-   - Security incidents
+| Scorecard | Metrics |
+| --- | --- |
+| Value Creation and Cash | Rule of 40, NRR, gross margin, runway |
+| GTM Efficiency | qualified pipeline, bookings, CAC payback, win rate |
+| Customer and Product Health | 30-day retention, NPS, CSAT, activation |
+| Risk and Execution Posture | enterprise risk, audit score, on-time delivery, security incidents |
 
 The Executive page also includes a metrics glossary so operators can understand what each metric means and how it should be interpreted.
+
+---
 
 ## Recommended CEO Workflow
 
@@ -483,58 +451,55 @@ The Executive page also includes a metrics glossary so operators can understand 
 3. Download the department CSV template.
 4. Fill it with monthly operating data.
 5. Upload the CSV.
-6. Confirm the department dashboard updates.
+6. Confirm charts and KPI cards update.
 7. Return to Executive.
 8. Review the combined scorecards.
 9. Click `Fetch Org Suggestions`.
-10. Use the generated synthesis to drive the operating meeting agenda.
+10. Export a PDF report or board memo.
+11. Use `/todo` and `/slack` to track commitments and follow-ups.
 
-## Development Notes
+---
 
-- The OpenAI API key must live in `frontend/.env.local` or `frontend/.env`.
-- Supabase credentials must live in `frontend/.env.local` or `frontend/.env`.
-- Department data is stored in Supabase JSONB tables, not source-controlled files.
-- For production security, add authentication, RBAC, audit logging, upload limits, schema validation, and encryption at rest.
-
-## Verification
-
-Run:
-
-```bash
-cd frontend
-npm run lint
-npm run build
-```
-
-Expected routes:
+## Routes
 
 ```text
 /                               Home command center
 /departments/executive           Executive dashboard
 /departments/finance             Finance dashboard
 /departments/sales               Sales dashboard
+/integrations                    Tool integrations hub
+/slack                           Live Slack workspace
+/todo                            Master To-Do
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
-/api/analytics/[department]       OpenAI analysis endpoint
+/api/analytics/[department]       Guarded OpenAI analysis endpoint
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint
 /api/slack/channels               Slack conversations.list endpoint
 ```
 
+---
+
 ## Roadmap
 
-- Add user authentication and role-based access control.
-- Add schema validation per department.
-- Add Slack/email action routing to department owners.
-- Add automated anomaly detection before OpenAI synthesis.
-- Add permissioned multi-company workspaces.
+- User authentication and role-based access control
+- Department schema validation
+- Automated anomaly detection before OpenAI synthesis
+- Slack/email action routing to department owners
+- Permissioned multi-company workspaces
+- Audit log viewer for Slack events, OpenAI calls, and board memo generation
+
+---
 
 ## Status
 
 This is a completely open-source, local-first MVP of an AI operating system for company leadership. It is an independent personal project designed to be credible in front of founders, operators, investors, and technical reviewers, while remaining small enough to iterate quickly.
 
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
