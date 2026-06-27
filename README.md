@@ -1,7 +1,11 @@
 # AI Chief of Staff
 
+**The AI operating system for CEOs: turn every department's metrics into board-ready decisions.**
+
 Created by **Suhas Bhairav**  
 Website: **https://suhasbhairav.com**
+
+![AI Chief of Staff executive dashboard](screenshot.png)
 
 AI Chief of Staff is an operating intelligence workspace for CEOs. It turns department-level CSV uploads into live executive dashboards, department scorecards, and OpenAI-generated recommendations for the CEO and functional leaders.
 
