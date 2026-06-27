@@ -5,6 +5,7 @@ import {
   saveSlackInstallation,
   tokenToPublicIntegration,
 } from "@/lib/slack/server";
+import { upsertDepartmentEmbeddings } from "@/lib/openai/department-embeddings";
 import fs from "fs";
 import path from "path";
 
@@ -260,6 +261,12 @@ export const upsertDepartmentSnapshot = async (snapshot) => {
 
   if (historyError) {
     throw new Error(`Unable to save Supabase historical import: ${historyError.message}`);
+  }
+
+  try {
+    await upsertDepartmentEmbeddings(normalized);
+  } catch (embeddingError) {
+    console.error("Department embedding refresh failed:", embeddingError);
   }
 
   return readOrganizationSummary();

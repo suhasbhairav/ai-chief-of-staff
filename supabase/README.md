@@ -19,6 +19,8 @@ The schema stores each department upload in `department_snapshots` with flexible
 
 The `organization_summaries` table stores the current executive rollup as JSONB.
 
+The schema also enables the `vector` extension and stores OpenAI embeddings in `department_embeddings`. The `match_department_embeddings` RPC performs cosine-similarity retrieval for the CEO Chat assistant.
+
 Additional operating-system tables:
 
 - `department_snapshot_history`: immutable upload ledger for historical trend imports and multi-period analysis.
@@ -26,6 +28,7 @@ Additional operating-system tables:
 - `slack_installations`: real Slack OAuth installations and bot tokens.
 - `slack_events`: signed Slack Events API webhook ledger.
 - `slack_message_snapshots`: Slack channel/DM message snapshots for auditability.
+- `department_embeddings`: pgvector chunks for department snapshots and CEO retrieval.
 
 ## 2. Environment Variables
 
@@ -35,9 +38,11 @@ Create `frontend/.env.local` or update `frontend/.env`:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-or-secret-key
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 The app uses the Supabase key only in Next.js route handlers. Do not expose the service role key in browser code.
+The default embedding model produces 1536-dimensional vectors, matching `department_embeddings.embedding vector(1536)`.
 
 ## 3. Data Flow
 
@@ -45,7 +50,11 @@ The app uses the Supabase key only in Next.js route handlers. Do not expose the 
 2. `/api/current-data` upserts the department snapshot into Supabase.
 3. The API appends the same upload to `department_snapshot_history`.
 4. The API rebuilds `organization_summaries.current`.
-5. Department dashboards and executive charts fetch `/api/current-data`.
-6. Historical trend tables fetch `/api/historical-data`.
-7. Board memo exports save memo metadata through `/api/board-memos`.
-8. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+5. The API refreshes `department_embeddings` for Supabase vector search.
+6. Department dashboards and executive charts fetch `/api/current-data`.
+7. Historical trend tables fetch `/api/historical-data`.
+8. CEO Chat uses `/api/ceo-chat` and `match_department_embeddings` for grounded retrieval.
+9. Board memo exports save memo metadata through `/api/board-memos`.
+10. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+
+Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.

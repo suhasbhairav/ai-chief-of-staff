@@ -65,6 +65,7 @@ export default function RootLayout({ children }) {
             <div className="space-y-1">
               <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">AI Agent Co-Pilot</div>
               {[
+                { id: 'assistant', name: 'CEO Chat', href: '/assistant', icon: '✨' },
                 { id: 'todo', name: 'Master To-Do', href: '/todo', icon: '📋' },
                 { id: 'slack', name: 'Slack Workspace', href: '/slack', icon: '💬' },
                 { id: 'integrations', name: 'Integrations Hub', href: '/integrations', icon: '🔌' },

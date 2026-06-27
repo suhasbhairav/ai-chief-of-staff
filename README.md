@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Slack-aware action tracking, executive scorecards, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Slack-aware action tracking, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -102,6 +102,15 @@ The product is designed around a simple idea: every important department should 
     </td>
   </tr>
   <tr>
+    <td width="33%" valign="top" bgcolor="#CCFBF1">
+      <h3>CEO Chat Assistant</h3>
+      <p>
+        <img src="https://img.shields.io/badge/RAG-0F766E?style=flat-square" />
+        <img src="https://img.shields.io/badge/pgvector-0891B2?style=flat-square" />
+      </p>
+      <p>Chat about any department, retrieve Supabase vector evidence, and escalate to guarded OpenAI synthesis only when the CEO asks.</p>
+      <p><strong>Output:</strong> grounded operating answers.</p>
+    </td>
     <td width="33%" valign="top" bgcolor="#DDD6FE">
       <h3>Historical Trend Imports</h3>
       <p>
@@ -120,6 +129,8 @@ The product is designed around a simple idea: every important department should 
       <p>Beautiful reports include cover pages, AI synthesis, KPI snapshots, chart tables, department tables, and methodology.</p>
       <p><strong>Output:</strong> polished management reports.</p>
     </td>
+  </tr>
+  <tr>
     <td width="33%" valign="top" bgcolor="#FECDD3">
       <h3>Board Memo Export</h3>
       <p>
@@ -141,6 +152,7 @@ The product is designed around a simple idea: every important department should 
 | Executive dashboard | Summarizes all departments into CEO scorecards | Supabase JSONB |
 | Department dashboards | Calculates KPI cards and charts from uploaded CSVs | Browser CSV parser + Supabase |
 | AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
+| CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -188,8 +200,11 @@ ai-chief-of-staff/
       slack/page.js                        # Live Slack workspace UI
       todo/page.js                         # Master To-Do command center
       integrations/page.js                 # Slack integration hub
+      assistant/page.js                    # CEO chat over Supabase vector memory
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
+        ceo-chat/route.js                  # Retrieval planner + CEO answer agent
+        embeddings/rebuild/route.js        # Backfill vector memory
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -197,6 +212,7 @@ ai-chief-of-staff/
         todo/route.js                      # Master To-Do sync and mutation
     lib/
       current-data-store.js                # Supabase read/write + org rollup
+      openai/department-embeddings.js      # OpenAI embeddings + pgvector retrieval
       openai/guardrails.js                 # Enterprise AI guardrails
       slack/server.js                      # Slack OAuth/API helpers
       supabase/server.js                   # Server-side Supabase client
@@ -221,10 +237,13 @@ flowchart LR
   A[Department CSV Upload] --> B[Next.js API]
   B --> C[Supabase department_snapshots]
   B --> D[Supabase department_snapshot_history]
+  B --> M[Supabase department_embeddings]
   C --> E[Executive Rollup]
   D --> F[Historical Trend Ledger]
+  M --> N[CEO Chat Retrieval]
   E --> G[CEO Dashboard]
   G --> H[Guarded OpenAI Synthesis]
+  N --> H
   H --> I[PDF Report / Board Memo]
   J[Slack Events API] --> K[Task Harvester]
   K --> L[Master To-Do]
@@ -236,9 +255,10 @@ flowchart LR
 4. `/api/current-data` upserts the current department snapshot.
 5. The same upload is appended to the historical import ledger.
 6. Executive rollups calculate org-level scorecards.
-7. OpenAI recommendations are generated only on explicit button clicks.
-8. PDF reports and board memos export from the live dashboard state.
-9. Slack events and channel sync harvest commitments into the Master To-Do.
+7. Uploads refresh Supabase vector embeddings for CEO chat retrieval.
+8. OpenAI recommendations are generated only on explicit button clicks or chat sends.
+9. PDF reports and board memos export from the live dashboard state.
+10. Slack events and channel sync harvest commitments into the Master To-Do.
 
 ---
 
@@ -252,11 +272,13 @@ Primary tables:
 | `organization_summaries` | Latest executive rollup and summary content |
 | `department_snapshot_history` | Immutable historical import ledger |
 | `board_memos` | Saved board memo metadata and JSON content |
+| `department_embeddings` | pgvector chunks for CEO chat and department retrieval |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
 
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
+The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
 ---
 
@@ -382,6 +404,7 @@ Create `frontend/.env.local` or configure the same variables in Vercel:
 
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_or_secret_key
 NEXT_PUBLIC_APP_URL=https://your-app-domain.com
@@ -491,8 +514,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 7. Return to Executive.
 8. Review the combined scorecards.
 9. Click `Fetch Org Suggestions`.
-10. Export a PDF report or board memo.
-11. Use `/todo` and `/slack` to track commitments and follow-ups.
+10. Open `/assistant` to ask CEO-level questions grounded in Supabase vector memory.
+11. Export a PDF report or board memo.
+12. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -506,10 +530,13 @@ The Executive page also includes a metrics glossary so operators can understand 
 /integrations                    Tool integrations hub
 /slack                           Live Slack workspace
 /todo                            Master To-Do
+/assistant                       CEO chat over Supabase vector memory
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
 /api/analytics/[department]       Guarded OpenAI analysis endpoint
+/api/ceo-chat                    Retrieval planner and CEO answer agent
+/api/embeddings/rebuild          Supabase vector memory backfill
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint
