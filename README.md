@@ -139,7 +139,7 @@ Every department dashboard and the Executive dashboard include `Export PDF Repor
 The generated report includes:
 
 - A designed cover page.
-- Report metadata with `Created by Suhas Bhairav` and `https://suhasbhairav.com`.
+- Report metadata.
 - The latest OpenAI synthesis shown in the dashboard.
 - KPI cards from the live dashboard calculations.
 - Chart scorecard source tables.
