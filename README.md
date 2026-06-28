@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Slack-aware action tracking, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Slack-aware action tracking, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -19,6 +19,7 @@ Turn every department's metrics into board-ready decisions, Slack-aware action t
 <img alt="Notion" src="https://img.shields.io/badge/Notion-OKRs-black?style=for-the-badge&logo=notion" />
 <img alt="HubSpot" src="https://img.shields.io/badge/HubSpot-Deal%20Pipeline-FF7A59?style=for-the-badge&logo=hubspot" />
 <img alt="Linear" src="https://img.shields.io/badge/Linear-Tickets-5E6AD2?style=for-the-badge&logo=linear" />
+<img alt="ClickUp" src="https://img.shields.io/badge/ClickUp-OKRs%20Tasks%20Roadmaps-7B68EE?style=for-the-badge&logo=clickup" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -132,6 +133,17 @@ The product is designed around a simple idea: every important department should 
       <p>Sync Linear issues for open load, urgent work, overdue tickets, stale execution, team pressure, project risk, and completion throughput.</p>
       <p><strong>Output:</strong> engineering execution command center.</p>
     </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top" bgcolor="#F5D0FE">
+      <h3>ClickUp Execution OS</h3>
+      <p>
+        <img src="https://img.shields.io/badge/ClickUp-7B68EE?style=flat-square&logo=clickup" />
+        <img src="https://img.shields.io/badge/OKRs%20Tasks%20Roadmaps-C026D3?style=flat-square" />
+      </p>
+      <p>Sync ClickUp Goals as OKRs, workspace tasks, roadmap-style initiatives, views, owners, stale work, overdue items, and CEO risk queue.</p>
+      <p><strong>Output:</strong> execution visibility for ClickUp-run teams.</p>
+    </td>
     <td width="33%" valign="top" bgcolor="#E0F2FE">
       <h3>Notion Product OKRs</h3>
       <p>
@@ -188,6 +200,7 @@ The product is designed around a simple idea: every important department should 
 | Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
 | Deal Pipeline | Tracks HubSpot pipeline health for the CEO | HubSpot CRM API + Supabase |
 | Ticket Overview | Tracks Linear execution health for the CEO | Linear npm SDK + Supabase |
+| ClickUp Execution | Tracks ClickUp Goals, tasks, roadmap initiatives, views, owners, and risk | ClickUp API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -238,6 +251,7 @@ ai-chief-of-staff/
       assistant/page.js                    # CEO chat over Supabase vector memory
       pipeline/page.js                     # HubSpot CEO deal pipeline
       tickets/page.js                      # Linear CEO ticket overview
+      clickup/page.js                      # ClickUp OKR/task/roadmap overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
@@ -245,6 +259,7 @@ ai-chief-of-staff/
         notion/okrs/route.js               # Notion OKR sync and store
         hubspot/deals/route.js             # HubSpot deal pipeline sync and store
         linear/tickets/route.js            # Linear ticket sync and store
+        clickup/overview/route.js          # ClickUp Goals, tasks, views sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -287,6 +302,8 @@ flowchart LR
   H --> I[PDF Report / Board Memo]
   J[Slack Events API] --> K[Task Harvester]
   K --> L[Master To-Do]
+  O[ClickUp API] --> P[ClickUp Workspace Snapshot]
+  P --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -299,6 +316,7 @@ flowchart LR
 8. OpenAI recommendations are generated only on explicit button clicks or chat sends.
 9. PDF reports and board memos export from the live dashboard state.
 10. Slack events and channel sync harvest commitments into the Master To-Do.
+11. ClickUp sync stores Goals, tasks, views, roadmap items, and risk summaries for CEO review.
 
 ---
 
@@ -316,6 +334,7 @@ Primary tables:
 | `notion_okr_snapshots` | Synced Notion Product OKR snapshots |
 | `hubspot_deal_snapshots` | Synced HubSpot deal pipeline snapshots |
 | `linear_ticket_snapshots` | Synced Linear issue snapshots |
+| `clickup_workspace_snapshots` | Synced ClickUp Goals, tasks, roadmap items, views, and summaries |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -462,6 +481,21 @@ The ticket overview tracks open tickets, urgent issues, overdue work, stale exec
 
 ---
 
+## ClickUp Execution Overview
+
+This is a real ClickUp integration for companies that run OKRs, delivery, and roadmap work in ClickUp.
+
+1. For production OAuth, create a ClickUp OAuth app and set the redirect URL to `https://your-app-domain.com/api/integrations/clickup/callback`.
+2. Add `CLICKUP_CLIENT_ID` and `CLICKUP_CLIENT_SECRET` in Vercel.
+3. For a single internal workspace, you can also add `CLICKUP_API_TOKEN` with a ClickUp personal token that starts with `pk_`.
+4. Optionally add `CLICKUP_WORKSPACE_ID` to pin one workspace when a token can access multiple workspaces.
+5. Open `/integrations` and connect ClickUp through OAuth or a personal token.
+6. Open `/clickup` and click `Sync ClickUp`.
+
+The ClickUp overview syncs authorized workspaces, Goals as OKRs, workspace tasks, workspace-level views, and roadmap-style work inferred from initiatives, milestones, releases, epics, launches, OKRs, and goals. It stores each sync in `clickup_workspace_snapshots` and surfaces CEO metrics for goal progress, overdue work, stale execution, owner load, roadmap status, and top risks.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -486,8 +520,6 @@ The ticket overview tracks open tickets, urgent issues, overdue work, stale exec
         <li>Risk summary</li>
         <li>Operating actions</li>
         <li>Saved metadata in Supabase</li>
-        <li>Created by Suhas Bhairav</li>
-        <li>Website attribution</li>
       </ul>
     </td>
   </tr>
@@ -514,6 +546,10 @@ NOTION_API_KEY=your_notion_internal_integration_secret
 NOTION_OKR_DATABASE_ID=your_product_okr_database_id
 HUBSPOT_ACCESS_TOKEN=your_hubspot_private_app_access_token
 LINEAR_API_KEY=your_linear_personal_api_key
+CLICKUP_API_TOKEN=your_clickup_personal_token_optional
+CLICKUP_WORKSPACE_ID=your_clickup_workspace_id_optional
+CLICKUP_CLIENT_ID=your_clickup_oauth_client_id_optional
+CLICKUP_CLIENT_SECRET=your_clickup_oauth_client_secret_optional
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -620,8 +656,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 10. Open `/assistant` to ask CEO-level questions grounded in Supabase vector memory.
 11. Open `/pipeline` to sync and inspect the HubSpot deal pipeline.
 12. Open `/tickets` to sync and inspect Linear execution health.
-13. Export a PDF report or board memo.
-14. Use `/todo` and `/slack` to track commitments and follow-ups.
+13. Open `/clickup` to sync and inspect ClickUp OKRs, tasks, and roadmap risks.
+14. Export a PDF report or board memo.
+15. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -638,6 +675,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /assistant                       CEO chat over Supabase vector memory
 /pipeline                        HubSpot CEO deal pipeline
 /tickets                         Linear CEO ticket overview
+/clickup                         ClickUp CEO OKR/task/roadmap overview
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
@@ -647,6 +685,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/notion/okrs                 Notion Product OKR sync endpoint
 /api/hubspot/deals               HubSpot deal pipeline sync endpoint
 /api/linear/tickets              Linear ticket overview sync endpoint
+/api/clickup/overview            ClickUp OKR/task/roadmap sync endpoint
+/api/integrations/clickup/authorize ClickUp OAuth start
+/api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint

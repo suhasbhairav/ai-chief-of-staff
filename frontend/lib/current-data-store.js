@@ -125,6 +125,7 @@ export const readOrganizationSummary = async () => {
       "notion-okrs.json",
       "hubspot-deals.json",
       "linear-tickets.json",
+      "clickup-workspace.json",
       "integrations.json"
     ];
 
@@ -587,6 +588,7 @@ const DEFAULT_INTEGRATIONS = {
   notion: { connected: false, name: "Notion OKRs", icon: "📓" },
   hubspot: { connected: false, name: "HubSpot Deals", icon: "🧲" },
   linear: { connected: false, name: "Linear Tickets", icon: "🎫" },
+  clickup: { connected: false, name: "ClickUp Workspace", icon: "☑️" },
 };
 
 export const readIntegrations = async () => {
@@ -989,6 +991,122 @@ export const writeLinearTickets = async ({ organizationId, organizationName, iss
 
   if (error) {
     throw new Error(`Unable to save Linear tickets: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// CLICKUP OKR / TASK / ROADMAP STORE
+// ==========================================
+
+const DEFAULT_CLICKUP_WORKSPACE_STORE = {
+  syncedAt: null,
+  workspaceId: null,
+  workspaceName: null,
+  goals: [],
+  tasks: [],
+  roadmaps: [],
+  views: [],
+  summary: {
+    totalGoals: 0,
+    avgGoalProgress: null,
+    openTasks: 0,
+    overdueTasks: 0,
+    urgentTasks: 0,
+    staleTasks: 0,
+    completedTasks: 0,
+    roadmapItems: 0,
+    statusBreakdown: [],
+    ownerBreakdown: [],
+    roadmapBreakdown: [],
+    topRisks: [],
+  },
+};
+
+export const readClickUpWorkspace = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const workspacePath = path.join(dir, "clickup-workspace.json");
+    if (!fs.existsSync(workspacePath)) return DEFAULT_CLICKUP_WORKSPACE_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(workspacePath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read clickup-workspace.json:", error);
+      return DEFAULT_CLICKUP_WORKSPACE_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("clickup_workspace_snapshots")
+    .select("workspace_id, workspace_name, synced_at, goals, tasks, roadmaps, views, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read ClickUp workspace: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_CLICKUP_WORKSPACE_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    workspaceId: data.workspace_id,
+    workspaceName: data.workspace_name,
+    goals: data.goals || [],
+    tasks: data.tasks || [],
+    roadmaps: data.roadmaps || [],
+    views: data.views || [],
+    summary: data.summary || DEFAULT_CLICKUP_WORKSPACE_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeClickUpWorkspace = async ({
+  workspaceId,
+  workspaceName,
+  goals,
+  tasks,
+  roadmaps,
+  views,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    workspaceId: workspaceId || null,
+    workspaceName: workspaceName || null,
+    goals: Array.isArray(goals) ? goals : [],
+    tasks: Array.isArray(tasks) ? tasks : [],
+    roadmaps: Array.isArray(roadmaps) ? roadmaps : [],
+    views: Array.isArray(views) ? views : [],
+    summary: summary || DEFAULT_CLICKUP_WORKSPACE_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const workspacePath = path.join(dir, "clickup-workspace.json");
+    fs.writeFileSync(workspacePath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("clickup_workspace_snapshots").insert({
+    workspace_id: store.workspaceId,
+    workspace_name: store.workspaceName,
+    synced_at: store.syncedAt,
+    goals: store.goals,
+    tasks: store.tasks,
+    roadmaps: store.roadmaps,
+    views: store.views,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save ClickUp workspace: ${error.message}`);
   }
 
   return store;

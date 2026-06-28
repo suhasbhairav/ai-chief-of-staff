@@ -16,6 +16,9 @@ function IntegrationsPageContent() {
   const [showHubspotForm, setShowHubspotForm] = useState(false);
   const [linearApiKey, setLinearApiKey] = useState("");
   const [showLinearForm, setShowLinearForm] = useState(false);
+  const [clickupToken, setClickupToken] = useState("");
+  const [clickupWorkspaceId, setClickupWorkspaceId] = useState("");
+  const [showClickupForm, setShowClickupForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -41,12 +44,20 @@ function IntegrationsPageContent() {
     
       const slackSuccess = searchParams.get("slack_success");
       const slackError = searchParams.get("slack_error");
+      const clickupSuccess = searchParams.get("clickup_success");
+      const clickupError = searchParams.get("clickup_error");
 
       if (slackSuccess) {
         setApiSuccess("Slack integrated successfully via OAuth!");
         setTimeout(() => setApiSuccess(""), 6000);
       } else if (slackError) {
         setApiError(`Slack integration failed: ${slackError}`);
+        setTimeout(() => setApiError(""), 8000);
+      } else if (clickupSuccess) {
+        setApiSuccess("ClickUp integrated successfully via OAuth!");
+        setTimeout(() => setApiSuccess(""), 6000);
+      } else if (clickupError) {
+        setApiError(`ClickUp integration failed: ${clickupError}`);
         setTimeout(() => setApiError(""), 8000);
       }
     });
@@ -219,6 +230,51 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleClickUpOAuthConnect = () => {
+    window.location.href = "/api/integrations/clickup/authorize";
+  };
+
+  const handleClickUpSubmit = async (e) => {
+    e.preventDefault();
+    if (!clickupToken.trim()) {
+      setApiError("ClickUp personal token or OAuth token is required.");
+      return;
+    }
+
+    setConnectingId("clickup");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clickup: {
+            api_token: clickupToken.trim(),
+            workspace_id: clickupWorkspaceId.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify ClickUp connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("ClickUp workspace connected successfully.");
+      setClickupToken("");
+      setClickupWorkspaceId("");
+      setShowClickupForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect ClickUp");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -277,6 +333,11 @@ function IntegrationsPageContent() {
       description: "Sync Linear issues for a CEO-level execution view: open tickets, urgent work, overdue work, stale issues, team load, project risk, and delivery throughput.",
       color: "from-violet-500/15 to-[#121214]",
       iconBg: "bg-violet-500/10 text-violet-200",
+    },
+    clickup: {
+      description: "Sync ClickUp Goals, tasks, and roadmap-style initiatives for teams running OKRs and delivery in ClickUp.",
+      color: "from-emerald-500/15 to-[#121214]",
+      iconBg: "bg-emerald-500/10 text-emerald-200",
     }
   };
 
@@ -316,6 +377,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with HubSpot CRM and validating deal scopes..."
                 : connectingId === "linear"
                   ? "Connecting with Linear SDK and checking workspace access..."
+                : connectingId === "clickup"
+                  ? "Connecting with ClickUp API and checking workspace access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -561,6 +624,72 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showClickupForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect ClickUp Workspace</h3>
+              <button 
+                onClick={() => setShowClickupForm(false)}
+                className="text-zinc-500 hover:text-white text-md font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-emerald-300">ClickUp setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Generate a ClickUp personal API token from ClickUp Apps settings, or use OAuth if configured.</li>
+                <li>Paste the token below. Personal tokens usually begin with <code className="text-emerald-300">pk_</code>.</li>
+                <li>Workspace ID is optional. If omitted, AICoS uses the first authorized workspace.</li>
+                <li>After connecting, open <code className="text-emerald-300">/clickup</code> and click <strong>Sync ClickUp</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleClickUpSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Personal API Token or OAuth Token</label>
+                <input
+                  type="password"
+                  value={clickupToken}
+                  onChange={(e) => setClickupToken(e.target.value)}
+                  placeholder="pk_... or ClickUp OAuth access token"
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Workspace ID</label>
+                <input
+                  type="text"
+                  value={clickupWorkspaceId}
+                  onChange={(e) => setClickupWorkspaceId(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                />
+              </div>
+              
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowClickupForm(false)}
+                  className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white transition-colors"
+                >
+                  Verify & Connect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -574,6 +703,7 @@ function IntegrationsPageContent() {
           const isNotion = id === "notion";
           const isHubSpot = id === "hubspot";
           const isLinear = id === "linear";
+          const isClickUp = id === "clickup";
 
           return (
             <div
@@ -629,6 +759,13 @@ function IntegrationsPageContent() {
                   <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
                     <div><span className="text-zinc-600 font-semibold">Workspace:</span> {info.organization_name || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_email || info.user_name || "Linear API key"}</div>
+                  </div>
+                )}
+
+                {info.connected && isClickUp && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Workspace:</span> {info.workspace_name || info.workspace_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_name || "ClickUp token"}</div>
                   </div>
                 )}
               </div>
@@ -689,6 +826,21 @@ function IntegrationsPageContent() {
                   >
                     Connect Linear Tickets
                   </button>
+                ) : isClickUp ? (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={handleClickUpOAuthConnect}
+                      className="flex w-full items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                    >
+                      Connect ClickUp OAuth
+                    </button>
+                    <button
+                      onClick={() => setShowClickupForm(true)}
+                      className="text-center text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors py-1"
+                    >
+                      Or paste personal token manually
+                    </button>
+                  </div>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">
                     Coming soon for non-sandbox environments.

@@ -3,6 +3,7 @@ import { readIntegrations, writeIntegrations } from "@/lib/current-data-store";
 import { getSlackCredentials, slackApi } from "@/lib/slack/server";
 import { validateHubSpotToken } from "@/lib/hubspot/server";
 import { validateLinearToken } from "@/lib/linear/server";
+import { createClickUpAuthHeader, validateClickUpToken } from "@/lib/clickup/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -52,6 +53,22 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.linear,
+  clickup: integrations?.clickup
+    ? {
+        ...integrations.clickup,
+        access_token: undefined,
+        api_token: undefined,
+        hasToken: Boolean(
+          integrations.clickup.access_token ||
+            integrations.clickup.api_token ||
+            process.env.CLICKUP_API_TOKEN
+        ),
+        workspace_id: integrations.clickup.workspace_id || process.env.CLICKUP_WORKSPACE_ID || "",
+        connected: Boolean(
+          integrations.clickup.connected || process.env.CLICKUP_API_TOKEN
+        ),
+      }
+    : integrations?.clickup,
 });
 
 export async function GET() {
@@ -64,6 +81,7 @@ export async function GET() {
       notionEnvConfigured: Boolean(process.env.NOTION_API_KEY && process.env.NOTION_OKR_DATABASE_ID),
       hubspotEnvConfigured: Boolean(process.env.HUBSPOT_ACCESS_TOKEN),
       linearEnvConfigured: Boolean(process.env.LINEAR_API_KEY),
+      clickupEnvConfigured: Boolean(process.env.CLICKUP_API_TOKEN),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -198,6 +216,53 @@ export async function POST(request) {
         ...payload.linear,
         api_key: current.linear.api_key,
       };
+    }
+
+    if (payload.clickup?.api_token || payload.clickup?.access_token) {
+      const token = (payload.clickup.api_token || payload.clickup.access_token).trim();
+      const validationToken = createClickUpAuthHeader(token, {
+        oauth: Boolean(payload.clickup.access_token),
+      });
+      try {
+        const account = await validateClickUpToken(validationToken);
+        const workspaceId = payload.clickup.workspace_id || account.workspaceId;
+        const workspace =
+          account.workspaces.find((team) => String(team.id) === String(workspaceId)) ||
+          account.workspaces[0];
+
+        payload.clickup = {
+          connected: true,
+          name: "ClickUp Workspace",
+          icon: "☑️",
+          api_token: payload.clickup.api_token ? token : undefined,
+          access_token: payload.clickup.access_token ? token : undefined,
+          workspace_id: workspace?.id ? String(workspace.id) : workspaceId,
+          workspace_name: workspace?.name || account.workspaceName,
+          user_name: account.user?.username || account.user?.email,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `ClickUp validation failed: ${error.message}. Use a valid personal token or OAuth access token with workspace access.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.clickup && payload.clickup.connected === false) {
+      payload.clickup = {
+        connected: false,
+        name: "ClickUp Workspace",
+        icon: "☑️",
+      };
+    } else if (payload.clickup && !payload.clickup.api_token && !payload.clickup.access_token) {
+      const preservedToken = current.clickup?.api_token || current.clickup?.access_token;
+      if (preservedToken) {
+        payload.clickup = {
+          ...current.clickup,
+          ...payload.clickup,
+          api_token: current.clickup?.api_token,
+          access_token: current.clickup?.access_token,
+        };
+      }
     }
     
     // Merge or update

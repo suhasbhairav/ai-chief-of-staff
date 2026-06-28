@@ -32,6 +32,7 @@ Additional operating-system tables:
 - `notion_okr_snapshots`: synced Notion Product OKR snapshots for objective tracking.
 - `hubspot_deal_snapshots`: synced HubSpot deal pipeline snapshots for CEO revenue tracking.
 - `linear_ticket_snapshots`: synced Linear issue snapshots for CEO execution tracking.
+- `clickup_workspace_snapshots`: synced ClickUp Goals, workspace tasks, roadmap-style initiatives, views, and CEO execution summaries.
 
 ## 2. Environment Variables
 
@@ -46,6 +47,10 @@ NOTION_API_KEY=your-notion-internal-integration-secret
 NOTION_OKR_DATABASE_ID=your-product-okr-database-id
 HUBSPOT_ACCESS_TOKEN=your-hubspot-private-app-access-token
 LINEAR_API_KEY=your-linear-personal-api-key
+CLICKUP_API_TOKEN=your-clickup-personal-token-optional
+CLICKUP_WORKSPACE_ID=your-clickup-workspace-id-optional
+CLICKUP_CLIENT_ID=your-clickup-oauth-client-id-optional
+CLICKUP_CLIENT_SECRET=your-clickup-oauth-client-secret-optional
 ```
 
 The app uses the Supabase key only in Next.js route handlers. Do not expose the service role key in browser code.
@@ -64,7 +69,8 @@ The default embedding model produces 1536-dimensional vectors, matching `departm
 9. Product OKRs sync from Notion through `/api/notion/okrs` into `notion_okr_snapshots`.
 10. Deal pipeline syncs from HubSpot through `/api/hubspot/deals` into `hubspot_deal_snapshots`.
 11. Ticket overview syncs from Linear through `/api/linear/tickets` into `linear_ticket_snapshots`.
-12. Board memo exports save memo metadata through `/api/board-memos`.
-13. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+12. ClickUp Goals, tasks, roadmap items, and views sync through `/api/clickup/overview` into `clickup_workspace_snapshots`.
+13. Board memo exports save memo metadata through `/api/board-memos`.
+14. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
 
 Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.
