@@ -1,6 +1,6 @@
--- AICoS demo seed data
+-- TAI Chief demo seed data
 -- Run supabase/schema.sql first, then run this file in the Supabase SQL Editor.
--- This resets AICoS application tables and loads two quarters of realistic demo data.
+-- This resets TAI Chief application tables and loads two quarters of realistic demo data.
 -- All credentials/tokens below are fake placeholders for demo UI state only.
 
 begin;
@@ -398,16 +398,16 @@ select
     'departments', departments,
     'departmentSummaries', department_summaries,
     'integrations', jsonb_build_object(
-      'slack', jsonb_build_object('connected', true, 'name', 'Slack', 'icon', '💬', 'team_name', 'AICoS Demo HQ', 'team_id', 'TDEMO001', 'bot_user_id', 'UDEMOAIC'),
+      'slack', jsonb_build_object('connected', true, 'name', 'Slack', 'icon', '💬', 'team_name', 'TAI Chief Demo HQ', 'team_id', 'TDEMO001', 'bot_user_id', 'UDEMOAIC'),
       'gmail', jsonb_build_object('connected', false, 'name', 'Gmail & Calendar', 'icon', '📧'),
       'notion', jsonb_build_object('connected', true, 'name', 'Notion OKRs', 'icon', '📓', 'database_id', 'demo-notion-okr-db', 'database_title', 'Product OKRs'),
       'hubspot', jsonb_build_object('connected', true, 'name', 'HubSpot Deals', 'icon', '🧲', 'portal_id', 'demo-portal-2048', 'hasToken', true),
-      'linear', jsonb_build_object('connected', true, 'name', 'Linear Tickets', 'icon', '🎫', 'organization_id', 'demo-linear-org', 'organization_name', 'AICoS Engineering', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
-      'clickup', jsonb_build_object('connected', true, 'name', 'ClickUp Workspace', 'icon', '☑️', 'workspace_id', 'demo-clickup-workspace', 'workspace_name', 'AICoS Demo Workspace', 'user_name', 'Demo CEO', 'hasToken', true),
-      'jira', jsonb_build_object('connected', true, 'name', 'Jira Issues', 'icon', '🔷', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'jql', 'project in (PLAT, GTM, DATA) order by updated DESC', 'user_name', 'Demo CEO', 'hasToken', true),
-      'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true),
-      'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'aicos-demo', 'repos', 'aicos-web,aicos-api,aicos-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true),
-      'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'AICoS Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true)
+      'linear', jsonb_build_object('connected', true, 'name', 'Linear Tickets', 'icon', '🎫', 'organization_id', 'demo-linear-org', 'organization_name', 'TAI Chief Engineering', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
+      'clickup', jsonb_build_object('connected', true, 'name', 'ClickUp Workspace', 'icon', '☑️', 'workspace_id', 'demo-clickup-workspace', 'workspace_name', 'TAI Chief Demo Workspace', 'user_name', 'Demo CEO', 'hasToken', true),
+      'jira', jsonb_build_object('connected', true, 'name', 'Jira Issues', 'icon', '🔷', 'site_url', 'https://tai-chief-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'jql', 'project in (PLAT, GTM, DATA) order by updated DESC', 'user_name', 'Demo CEO', 'hasToken', true),
+      'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://tai-chief-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true),
+      'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'tai-chief-demo', 'repos', 'tai-chief-web,tai-chief-api,tai-chief-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true),
+      'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'TAI Chief Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -463,8 +463,8 @@ values
 insert into public.slack_installations (team_id, team_name, app_id, bot_user_id, bot_access_token, scope, authed_user_id, is_active, installed_at, content)
 values (
   'TDEMO001',
-  'AICoS Demo HQ',
-  'ADEMOAICOS',
+  'TAI Chief Demo HQ',
+  'ADEMOTAICHIEF',
   'UDEMOAIC',
   'xoxb-demo-token-not-valid',
   'channels:read,channels:history,chat:write,users:read,app_mentions:read',
@@ -477,7 +477,7 @@ values (
 insert into public.slack_events (team_id, event_id, event_type, channel_id, user_id, event_ts, text, handled, content)
 values
 ('TDEMO001', 'EvDEMO001', 'message', 'CEXEC', 'UFINANCE', '1780300800.000100', 'Q3 forecast improved. Need CEO approval on enterprise discount guardrails by Friday.', true, jsonb_build_object('priority', 'P0', 'department', 'sales')),
-('TDEMO001', 'EvDEMO002', 'app_mention', 'CPRODUCT', 'UPRODUCT', '1780387200.000200', '@AICoS summarize activation blockers for strategic accounts.', true, jsonb_build_object('priority', 'P1', 'department', 'product')),
+('TDEMO001', 'EvDEMO002', 'app_mention', 'CPRODUCT', 'UPRODUCT', '1780387200.000200', '@TAI Chief summarize activation blockers for strategic accounts.', true, jsonb_build_object('priority', 'P1', 'department', 'product')),
 ('TDEMO001', 'EvDEMO003', 'message', 'CSECURITY', 'UIT', '1780473600.000300', 'SOC2 evidence package needs Legal review before healthcare launch.', true, jsonb_build_object('priority', 'P1', 'department', 'it'));
 
 insert into public.slack_message_snapshots (team_id, channel_id, channel_name, message_ts, user_id, text, content, captured_at)
@@ -519,7 +519,7 @@ values (
 insert into public.linear_ticket_snapshots (organization_id, organization_name, synced_at, issues, summary, content)
 values (
   'demo-linear-org',
-  'AICoS Engineering',
+  'TAI Chief Engineering',
   '2026-09-30T18:15:00Z',
   '[
     {"id":"lin-1","identifier":"ENG-142","title":"Enterprise admin templates","team":"Product Engineering","priority":"Urgent","state":"In Progress","assignee":"Nina Patel","isOpen":true,"isOverdue":false,"isStale":false,"ageDays":8},
@@ -528,13 +528,13 @@ values (
     {"id":"lin-4","identifier":"ENG-145","title":"Slack task harvester confidence scoring","team":"AI","priority":"High","state":"In Review","assignee":"Sam Iyer","isOpen":true,"isOverdue":false,"isStale":false,"ageDays":11}
   ]'::jsonb,
   '{"totalIssues":4,"openIssues":3,"urgentIssues":1,"overdueIssues":1,"staleIssues":1,"completedLast30Days":1,"canceledIssues":0,"avgOpenAgeDays":14,"stateBreakdown":[{"name":"In Progress","count":1},{"name":"Blocked","count":1},{"name":"In Review","count":1}],"teamBreakdown":[{"name":"Platform","count":1},{"name":"Product Engineering","count":1},{"name":"AI","count":1}],"priorityBreakdown":[{"name":"High","count":2},{"name":"Urgent","count":1}],"topRisks":[]}'::jsonb,
-  '{"source":"linear","organizationName":"AICoS Engineering","syncedAt":"2026-09-30T18:15:00Z"}'::jsonb
+  '{"source":"linear","organizationName":"TAI Chief Engineering","syncedAt":"2026-09-30T18:15:00Z"}'::jsonb
 );
 
 insert into public.clickup_workspace_snapshots (workspace_id, workspace_name, synced_at, goals, tasks, roadmaps, views, summary, content)
 values (
   'demo-clickup-workspace',
-  'AICoS Demo Workspace',
+  'TAI Chief Demo Workspace',
   '2026-09-30T18:20:00Z',
   '[
     {"id":"goal-1","name":"Q3 Enterprise Readiness","progress":88,"owners":["CEO","Product"],"dueDate":"2026-09-30","targets":[{"name":"Activation","progress":91},{"name":"SOC2 Evidence","progress":82}]},
@@ -551,12 +551,12 @@ values (
   ]'::jsonb,
   '[{"id":"view-1","name":"CEO Operating Review","type":"board"},{"id":"view-2","name":"Q4 Roadmap","type":"timeline"}]'::jsonb,
   '{"totalGoals":2,"avgGoalProgress":91,"openTasks":3,"overdueTasks":2,"urgentTasks":1,"staleTasks":1,"completedTasks":0,"roadmapItems":2,"statusBreakdown":[{"name":"In Progress","count":1},{"name":"Review","count":1},{"name":"Blocked","count":1}],"ownerBreakdown":[{"name":"Product","count":1},{"name":"CEO","count":1},{"name":"Legal","count":1}],"roadmapBreakdown":[{"name":"In Progress","count":1},{"name":"Blocked","count":1}],"topRisks":[]}'::jsonb,
-  '{"source":"clickup","workspaceName":"AICoS Demo Workspace","syncedAt":"2026-09-30T18:20:00Z"}'::jsonb
+  '{"source":"clickup","workspaceName":"TAI Chief Demo Workspace","syncedAt":"2026-09-30T18:20:00Z"}'::jsonb
 );
 
 insert into public.jira_issue_snapshots (site_url, synced_at, issues, projects, summary, content)
 values (
-  'https://aicos-demo.atlassian.net',
+  'https://tai-chief-demo.atlassian.net',
   '2026-09-30T18:25:00Z',
   '[
     {"id":"jira-1","key":"PLAT-241","summary":"SOC2 evidence automation","issueType":"Story","status":"Blocked","priority":"High","projectKey":"PLAT","assignee":"Owen Kim","dueDate":"2026-09-26","isOpen":true,"isOverdue":true,"isStale":true,"isHighPriority":true,"isRoadmap":false,"ageDays":24},
@@ -566,53 +566,53 @@ values (
   ]'::jsonb,
   '[{"id":"10001","key":"PLAT","name":"Platform"},{"id":"10002","key":"GTM","name":"Go To Market"},{"id":"10003","key":"DATA","name":"Data Intelligence"}]'::jsonb,
   '{"totalIssues":4,"totalProjects":3,"openIssues":3,"doneIssues":1,"highPriorityIssues":3,"overdueIssues":1,"staleIssues":1,"roadmapIssues":2,"completedLast30Days":1,"avgOpenAgeDays":15,"statusBreakdown":[{"name":"Blocked","count":1},{"name":"In Progress","count":1},{"name":"Review","count":1}],"projectBreakdown":[{"name":"PLAT","count":2},{"name":"GTM","count":1}],"priorityBreakdown":[{"name":"High","count":2},{"name":"Highest","count":1}],"assigneeBreakdown":[{"name":"Owen Kim","count":1},{"name":"Ava Chen","count":1},{"name":"Nina Patel","count":1}],"topRisks":[]}'::jsonb,
-  '{"source":"jira","siteUrl":"https://aicos-demo.atlassian.net","syncedAt":"2026-09-30T18:25:00Z"}'::jsonb
+  '{"source":"jira","siteUrl":"https://tai-chief-demo.atlassian.net","syncedAt":"2026-09-30T18:25:00Z"}'::jsonb
 );
 
 insert into public.confluence_content_snapshots (site_url, synced_at, pages, spaces, summary, content)
 values (
-  'https://aicos-demo.atlassian.net',
+  'https://tai-chief-demo.atlassian.net',
   '2026-09-30T18:30:00Z',
   '[
-    {"id":"conf-1","title":"Q4 Enterprise Launch Roadmap","type":"page","url":"https://aicos-demo.atlassian.net/wiki/spaces/PROD/pages/1","spaceKey":"PROD","spaceName":"Product","owner":"Product","updatedAt":"2026-09-28T10:00:00Z","isRecentlyUpdated":true,"isStale":false,"isRoadmap":true,"isPolicy":false},
-    {"id":"conf-2","title":"Enterprise Discount Policy","type":"page","url":"https://aicos-demo.atlassian.net/wiki/spaces/FIN/pages/2","spaceKey":"FIN","spaceName":"Finance","owner":"Finance","updatedAt":"2026-09-22T12:00:00Z","isRecentlyUpdated":true,"isStale":false,"isRoadmap":false,"isPolicy":true},
-    {"id":"conf-3","title":"SOC2 Evidence Runbook","type":"page","url":"https://aicos-demo.atlassian.net/wiki/spaces/SEC/pages/3","spaceKey":"SEC","spaceName":"Security","owner":"IT","updatedAt":"2026-08-04T09:00:00Z","isRecentlyUpdated":false,"isStale":false,"isRoadmap":false,"isPolicy":true},
-    {"id":"conf-4","title":"Legacy Onboarding Notes","type":"page","url":"https://aicos-demo.atlassian.net/wiki/spaces/CS/pages/4","spaceKey":"CS","spaceName":"Customer Success","owner":"Support","updatedAt":"2026-03-15T09:00:00Z","isRecentlyUpdated":false,"isStale":true,"isRoadmap":false,"isPolicy":false}
+    {"id":"conf-1","title":"Q4 Enterprise Launch Roadmap","type":"page","url":"https://tai-chief-demo.atlassian.net/wiki/spaces/PROD/pages/1","spaceKey":"PROD","spaceName":"Product","owner":"Product","updatedAt":"2026-09-28T10:00:00Z","isRecentlyUpdated":true,"isStale":false,"isRoadmap":true,"isPolicy":false},
+    {"id":"conf-2","title":"Enterprise Discount Policy","type":"page","url":"https://tai-chief-demo.atlassian.net/wiki/spaces/FIN/pages/2","spaceKey":"FIN","spaceName":"Finance","owner":"Finance","updatedAt":"2026-09-22T12:00:00Z","isRecentlyUpdated":true,"isStale":false,"isRoadmap":false,"isPolicy":true},
+    {"id":"conf-3","title":"SOC2 Evidence Runbook","type":"page","url":"https://tai-chief-demo.atlassian.net/wiki/spaces/SEC/pages/3","spaceKey":"SEC","spaceName":"Security","owner":"IT","updatedAt":"2026-08-04T09:00:00Z","isRecentlyUpdated":false,"isStale":false,"isRoadmap":false,"isPolicy":true},
+    {"id":"conf-4","title":"Legacy Onboarding Notes","type":"page","url":"https://tai-chief-demo.atlassian.net/wiki/spaces/CS/pages/4","spaceKey":"CS","spaceName":"Customer Success","owner":"Support","updatedAt":"2026-03-15T09:00:00Z","isRecentlyUpdated":false,"isStale":true,"isRoadmap":false,"isPolicy":false}
   ]'::jsonb,
   '[{"id":"space-1","key":"PROD","name":"Product","type":"global"},{"id":"space-2","key":"FIN","name":"Finance","type":"global"},{"id":"space-3","key":"SEC","name":"Security","type":"global"},{"id":"space-4","key":"CS","name":"Customer Success","type":"global"}]'::jsonb,
   '{"totalPages":4,"totalSpaces":4,"recentlyUpdated":2,"stalePages":1,"roadmapPages":1,"policyPages":2,"knowledgeOwners":4,"spaceBreakdown":[{"name":"PROD","count":1},{"name":"FIN","count":1},{"name":"SEC","count":1},{"name":"CS","count":1}],"ownerBreakdown":[{"name":"Product","count":1},{"name":"Finance","count":1},{"name":"IT","count":1},{"name":"Support","count":1}],"typeBreakdown":[{"name":"page","count":4}],"topPages":[]}'::jsonb,
-  '{"source":"confluence","siteUrl":"https://aicos-demo.atlassian.net","syncedAt":"2026-09-30T18:30:00Z"}'::jsonb
+  '{"source":"confluence","siteUrl":"https://tai-chief-demo.atlassian.net","syncedAt":"2026-09-30T18:30:00Z"}'::jsonb
 );
 
 insert into public.github_repo_snapshots (owner, synced_at, repositories, pull_requests, issues, summary, content)
 values (
-  'aicos-demo',
+  'tai-chief-demo',
   '2026-09-30T18:35:00Z',
   '[
-    {"id":101,"name":"aicos-web","fullName":"aicos-demo/aicos-web","owner":"aicos-demo","private":true,"archived":false,"htmlUrl":"https://github.com/aicos-demo/aicos-web","language":"JavaScript","stargazersCount":0,"forksCount":0,"openIssuesCount":7,"defaultBranch":"main","pushedAt":"2026-09-29T16:00:00Z","updatedAt":"2026-09-29T16:00:00Z"},
-    {"id":102,"name":"aicos-api","fullName":"aicos-demo/aicos-api","owner":"aicos-demo","private":true,"archived":false,"htmlUrl":"https://github.com/aicos-demo/aicos-api","language":"Python","stargazersCount":0,"forksCount":0,"openIssuesCount":5,"defaultBranch":"main","pushedAt":"2026-09-28T12:00:00Z","updatedAt":"2026-09-28T12:00:00Z"},
-    {"id":103,"name":"aicos-agents","fullName":"aicos-demo/aicos-agents","owner":"aicos-demo","private":true,"archived":false,"htmlUrl":"https://github.com/aicos-demo/aicos-agents","language":"TypeScript","stargazersCount":0,"forksCount":0,"openIssuesCount":4,"defaultBranch":"main","pushedAt":"2026-09-27T10:00:00Z","updatedAt":"2026-09-27T10:00:00Z"}
+    {"id":101,"name":"tai-chief-web","fullName":"tai-chief-demo/tai-chief-web","owner":"tai-chief-demo","private":true,"archived":false,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-web","language":"JavaScript","stargazersCount":0,"forksCount":0,"openIssuesCount":7,"defaultBranch":"main","pushedAt":"2026-09-29T16:00:00Z","updatedAt":"2026-09-29T16:00:00Z"},
+    {"id":102,"name":"tai-chief-api","fullName":"tai-chief-demo/tai-chief-api","owner":"tai-chief-demo","private":true,"archived":false,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-api","language":"Python","stargazersCount":0,"forksCount":0,"openIssuesCount":5,"defaultBranch":"main","pushedAt":"2026-09-28T12:00:00Z","updatedAt":"2026-09-28T12:00:00Z"},
+    {"id":103,"name":"tai-chief-agents","fullName":"tai-chief-demo/tai-chief-agents","owner":"tai-chief-demo","private":true,"archived":false,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-agents","language":"TypeScript","stargazersCount":0,"forksCount":0,"openIssuesCount":4,"defaultBranch":"main","pushedAt":"2026-09-27T10:00:00Z","updatedAt":"2026-09-27T10:00:00Z"}
   ]'::jsonb,
   '[
-    {"id":201,"number":44,"title":"Add CEO GitHub risk queue","repo":"aicos-demo/aicos-web","author":"nina","state":"open","draft":false,"merged":false,"createdAt":"2026-09-23T09:00:00Z","updatedAt":"2026-09-29T10:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-web/pull/44","comments":3,"reviewComments":8,"labels":["frontend","ceo-dashboard"],"isOpen":true,"isMerged":false,"isStale":false,"ageDays":7,"updatedDaysAgo":1},
-    {"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"aicos-demo/aicos-api","author":"owen","state":"open","draft":false,"merged":false,"createdAt":"2026-09-14T11:00:00Z","updatedAt":"2026-09-18T15:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-api/pull/57","comments":5,"reviewComments":11,"labels":["backend","risk"],"isOpen":true,"isMerged":false,"isStale":true,"ageDays":16,"updatedDaysAgo":12},
-    {"id":203,"number":31,"title":"Experiment with repo health retrieval planner","repo":"aicos-demo/aicos-agents","author":"sam","state":"open","draft":true,"merged":false,"createdAt":"2026-09-25T12:30:00Z","updatedAt":"2026-09-29T13:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-agents/pull/31","comments":1,"reviewComments":2,"labels":["ai","draft"],"isOpen":true,"isMerged":false,"isStale":false,"ageDays":5,"updatedDaysAgo":1},
-    {"id":204,"number":28,"title":"Fix board memo export table wrapping","repo":"aicos-demo/aicos-web","author":"leah","state":"closed","draft":false,"merged":true,"createdAt":"2026-09-10T08:00:00Z","updatedAt":"2026-09-12T17:00:00Z","closedAt":"2026-09-12T17:00:00Z","mergedAt":"2026-09-12T17:00:00Z","htmlUrl":"https://github.com/aicos-demo/aicos-web/pull/28","comments":2,"reviewComments":4,"labels":["reports"],"isOpen":false,"isMerged":true,"isStale":false,"ageDays":20,"updatedDaysAgo":18}
+    {"id":201,"number":44,"title":"Add CEO GitHub risk queue","repo":"tai-chief-demo/tai-chief-web","author":"nina","state":"open","draft":false,"merged":false,"createdAt":"2026-09-23T09:00:00Z","updatedAt":"2026-09-29T10:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-web/pull/44","comments":3,"reviewComments":8,"labels":["frontend","ceo-dashboard"],"isOpen":true,"isMerged":false,"isStale":false,"ageDays":7,"updatedDaysAgo":1},
+    {"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"tai-chief-demo/tai-chief-api","author":"owen","state":"open","draft":false,"merged":false,"createdAt":"2026-09-14T11:00:00Z","updatedAt":"2026-09-18T15:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-api/pull/57","comments":5,"reviewComments":11,"labels":["backend","risk"],"isOpen":true,"isMerged":false,"isStale":true,"ageDays":16,"updatedDaysAgo":12},
+    {"id":203,"number":31,"title":"Experiment with repo health retrieval planner","repo":"tai-chief-demo/tai-chief-agents","author":"sam","state":"open","draft":true,"merged":false,"createdAt":"2026-09-25T12:30:00Z","updatedAt":"2026-09-29T13:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-agents/pull/31","comments":1,"reviewComments":2,"labels":["ai","draft"],"isOpen":true,"isMerged":false,"isStale":false,"ageDays":5,"updatedDaysAgo":1},
+    {"id":204,"number":28,"title":"Fix board memo export table wrapping","repo":"tai-chief-demo/tai-chief-web","author":"leah","state":"closed","draft":false,"merged":true,"createdAt":"2026-09-10T08:00:00Z","updatedAt":"2026-09-12T17:00:00Z","closedAt":"2026-09-12T17:00:00Z","mergedAt":"2026-09-12T17:00:00Z","htmlUrl":"https://github.com/tai-chief-demo/tai-chief-web/pull/28","comments":2,"reviewComments":4,"labels":["reports"],"isOpen":false,"isMerged":true,"isStale":false,"ageDays":20,"updatedDaysAgo":18}
   ]'::jsonb,
   '[
-    {"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"aicos-demo/aicos-agents","author":"maya","state":"open","createdAt":"2026-09-09T09:00:00Z","updatedAt":"2026-09-17T10:00:00Z","closedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-agents/issues/88","labels":["bug","p1","assistant"],"assignees":["sam"],"milestone":"Q4 CEO readiness","comments":6,"isBug":true,"isOpen":true,"isStale":true,"ageDays":21,"updatedDaysAgo":13},
-    {"id":302,"number":92,"title":"CSV upload accepts duplicate quarter headers","repo":"aicos-demo/aicos-web","author":"ava","state":"open","createdAt":"2026-09-21T14:00:00Z","updatedAt":"2026-09-28T09:00:00Z","closedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/92","labels":["bug","data-quality"],"assignees":["nina"],"milestone":"Q4 CEO readiness","comments":3,"isBug":true,"isOpen":true,"isStale":false,"ageDays":9,"updatedDaysAgo":2},
-    {"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"aicos-demo/aicos-web","author":"priya","state":"open","createdAt":"2026-09-12T08:00:00Z","updatedAt":"2026-09-13T08:30:00Z","closedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/61","labels":["enhancement","dashboard"],"assignees":["leah"],"milestone":"Q4 CEO readiness","comments":2,"isBug":false,"isOpen":true,"isStale":true,"ageDays":18,"updatedDaysAgo":17},
-    {"id":304,"number":49,"title":"API timeout on large Jira import","repo":"aicos-demo/aicos-api","author":"owen","state":"closed","createdAt":"2026-09-02T10:00:00Z","updatedAt":"2026-09-20T16:00:00Z","closedAt":"2026-09-20T16:00:00Z","htmlUrl":"https://github.com/aicos-demo/aicos-api/issues/49","labels":["bug","performance"],"assignees":["owen"],"milestone":"Q3 hardening","comments":7,"isBug":true,"isOpen":false,"isStale":false,"ageDays":28,"updatedDaysAgo":10}
+    {"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"tai-chief-demo/tai-chief-agents","author":"maya","state":"open","createdAt":"2026-09-09T09:00:00Z","updatedAt":"2026-09-17T10:00:00Z","closedAt":null,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-agents/issues/88","labels":["bug","p1","assistant"],"assignees":["sam"],"milestone":"Q4 CEO readiness","comments":6,"isBug":true,"isOpen":true,"isStale":true,"ageDays":21,"updatedDaysAgo":13},
+    {"id":302,"number":92,"title":"CSV upload accepts duplicate quarter headers","repo":"tai-chief-demo/tai-chief-web","author":"ava","state":"open","createdAt":"2026-09-21T14:00:00Z","updatedAt":"2026-09-28T09:00:00Z","closedAt":null,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-web/issues/92","labels":["bug","data-quality"],"assignees":["nina"],"milestone":"Q4 CEO readiness","comments":3,"isBug":true,"isOpen":true,"isStale":false,"ageDays":9,"updatedDaysAgo":2},
+    {"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"tai-chief-demo/tai-chief-web","author":"priya","state":"open","createdAt":"2026-09-12T08:00:00Z","updatedAt":"2026-09-13T08:30:00Z","closedAt":null,"htmlUrl":"https://github.com/tai-chief-demo/tai-chief-web/issues/61","labels":["enhancement","dashboard"],"assignees":["leah"],"milestone":"Q4 CEO readiness","comments":2,"isBug":false,"isOpen":true,"isStale":true,"ageDays":18,"updatedDaysAgo":17},
+    {"id":304,"number":49,"title":"API timeout on large Jira import","repo":"tai-chief-demo/tai-chief-api","author":"owen","state":"closed","createdAt":"2026-09-02T10:00:00Z","updatedAt":"2026-09-20T16:00:00Z","closedAt":"2026-09-20T16:00:00Z","htmlUrl":"https://github.com/tai-chief-demo/tai-chief-api/issues/49","labels":["bug","performance"],"assignees":["owen"],"milestone":"Q3 hardening","comments":7,"isBug":true,"isOpen":false,"isStale":false,"ageDays":28,"updatedDaysAgo":10}
   ]'::jsonb,
-  '{"totalRepositories":3,"openPullRequests":3,"mergedPullRequests":1,"draftPullRequests":1,"stalePullRequests":1,"openIssues":3,"openBugs":2,"staleIssues":2,"closedIssuesLast30Days":1,"prsByRepo":[{"name":"aicos-demo/aicos-web","count":1},{"name":"aicos-demo/aicos-api","count":1},{"name":"aicos-demo/aicos-agents","count":1}],"issuesByRepo":[{"name":"aicos-demo/aicos-web","count":2},{"name":"aicos-demo/aicos-agents","count":1}],"bugsByRepo":[{"name":"aicos-demo/aicos-agents","count":1},{"name":"aicos-demo/aicos-web","count":1}],"languageBreakdown":[{"name":"JavaScript","count":1},{"name":"Python","count":1},{"name":"TypeScript","count":1}],"topRisks":[{"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"aicos-demo/aicos-agents","htmlUrl":"https://github.com/aicos-demo/aicos-agents/issues/88","riskType":"Open bug","isBug":true,"ageDays":21},{"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"aicos-demo/aicos-api","htmlUrl":"https://github.com/aicos-demo/aicos-api/pull/57","riskType":"Stale PR","ageDays":16},{"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"aicos-demo/aicos-web","htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/61","riskType":"Stale issue","ageDays":18}]}'::jsonb,
-  '{"source":"github","owner":"aicos-demo","syncedAt":"2026-09-30T18:35:00Z"}'::jsonb
+  '{"totalRepositories":3,"openPullRequests":3,"mergedPullRequests":1,"draftPullRequests":1,"stalePullRequests":1,"openIssues":3,"openBugs":2,"staleIssues":2,"closedIssuesLast30Days":1,"prsByRepo":[{"name":"tai-chief-demo/tai-chief-web","count":1},{"name":"tai-chief-demo/tai-chief-api","count":1},{"name":"tai-chief-demo/tai-chief-agents","count":1}],"issuesByRepo":[{"name":"tai-chief-demo/tai-chief-web","count":2},{"name":"tai-chief-demo/tai-chief-agents","count":1}],"bugsByRepo":[{"name":"tai-chief-demo/tai-chief-agents","count":1},{"name":"tai-chief-demo/tai-chief-web","count":1}],"languageBreakdown":[{"name":"JavaScript","count":1},{"name":"Python","count":1},{"name":"TypeScript","count":1}],"topRisks":[{"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"tai-chief-demo/tai-chief-agents","htmlUrl":"https://github.com/tai-chief-demo/tai-chief-agents/issues/88","riskType":"Open bug","isBug":true,"ageDays":21},{"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"tai-chief-demo/tai-chief-api","htmlUrl":"https://github.com/tai-chief-demo/tai-chief-api/pull/57","riskType":"Stale PR","ageDays":16},{"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"tai-chief-demo/tai-chief-web","htmlUrl":"https://github.com/tai-chief-demo/tai-chief-web/issues/61","riskType":"Stale issue","ageDays":18}]}'::jsonb,
+  '{"source":"github","owner":"tai-chief-demo","syncedAt":"2026-09-30T18:35:00Z"}'::jsonb
 );
 
 insert into public.asana_workspace_snapshots (workspace_gid, workspace_name, synced_at, projects, tasks, summary, content)
 values (
   'demo-asana-workspace',
-  'AICoS Operating Workspace',
+  'TAI Chief Operating Workspace',
   '2026-09-30T18:40:00Z',
   '[
     {"gid":"launch-q4","name":"Q4 Enterprise Launch","archived":false,"completed":false,"completedAt":null,"createdAt":"2026-07-01T09:00:00Z","modifiedAt":"2026-09-29T13:00:00Z","owner":"Product","team":"GTM","statusColor":"green","statusTitle":"On track","statusText":"Launch assets and compliance gates are converging.","url":"https://app.asana.com/0/launch-q4"},
@@ -626,7 +626,7 @@ values (
     {"gid":"asana-4","name":"Publish board metrics appendix","completed":true,"completedAt":"2026-09-26T16:00:00Z","createdAt":"2026-09-16T09:00:00Z","modifiedAt":"2026-09-26T16:00:00Z","dueDate":"2026-09-27","assignee":"Finance","assigneeEmail":"finance@example.com","projectGid":"board-operating-rhythm","projectName":"Board Operating Rhythm","url":"https://app.asana.com/0/board-operating-rhythm/asana-4","tags":["board"],"isOpen":false,"isOverdue":false,"isDueSoon":false,"isStale":false,"isUnassigned":false,"ageDays":14,"updatedDaysAgo":4}
   ]'::jsonb,
   '{"totalProjects":3,"totalTasks":4,"openTasks":3,"completedTasks":1,"overdueTasks":2,"dueSoonTasks":1,"staleTasks":2,"unassignedTasks":1,"avgOpenAgeDays":22,"statusBreakdown":[{"name":"Open","count":3},{"name":"Completed","count":1},{"name":"Overdue","count":2},{"name":"Stale","count":2}],"projectBreakdown":[{"name":"Enterprise Readiness Program","count":2},{"name":"Q4 Enterprise Launch","count":1}],"ownerBreakdown":[{"name":"IT","count":1},{"name":"Product","count":1},{"name":"Unassigned","count":1}],"topRisks":[{"gid":"asana-2","name":"Close SOC2 procurement evidence gap","projectName":"Enterprise Readiness Program","assignee":"IT","url":"https://app.asana.com/0/enterprise-readiness/asana-2","isOverdue":true,"isStale":true,"isUnassigned":false,"ageDays":26},{"gid":"asana-3","name":"Assign owner for healthcare launch runbook","projectName":"Enterprise Readiness Program","assignee":"Unassigned","url":"https://app.asana.com/0/enterprise-readiness/asana-3","isOverdue":true,"isStale":true,"isUnassigned":true,"ageDays":21}]}'::jsonb,
-  '{"source":"asana","workspaceName":"AICoS Operating Workspace","syncedAt":"2026-09-30T18:40:00Z"}'::jsonb
+  '{"source":"asana","workspaceName":"TAI Chief Operating Workspace","syncedAt":"2026-09-30T18:40:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (

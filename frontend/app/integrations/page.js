@@ -500,12 +500,12 @@ function IntegrationsPageContent() {
 
   const integrationDetails = {
     slack: {
-      description: "Install the real Slack app. AICoS reads approved channels and DMs, harvests commitments, ranks P0/P1 work, and replies in Slack through Slack Web API and Events API.",
+      description: "Install the real Slack app. TAI Chief reads approved channels and DMs, harvests commitments, ranks P0/P1 work, and replies in Slack through Slack Web API and Events API.",
       color: "from-[#4a154b]/30 to-[#121214]",
       iconBg: "bg-[#4a154b]/20 text-[#e01e5a]",
     },
     gmail: {
-      description: "Seamlessly parse inbound emails and calendars. AICoS monitors deadlines, drafts context-aware replies for review, and identifies commitments from meetings.",
+      description: "Seamlessly parse inbound emails and calendars. TAI Chief monitors deadlines, drafts context-aware replies for review, and identifies commitments from meetings.",
       color: "from-red-500/10 to-[#121214]",
       iconBg: "bg-red-500/10 text-red-400",
     },
@@ -558,7 +558,7 @@ function IntegrationsPageContent() {
       <div className="border-b border-[#27272a] pb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Tool Integrations Hub</h1>
         <p className="mt-2 text-sm text-zinc-400 max-w-3xl">
-          Connect your organization&apos;s primary data sources. AICoS syncs conversations, mail threads, tickets, repositories, docs, and deal data into a consolidated company brain.
+          Connect your organization&apos;s primary data sources. TAI Chief syncs conversations, mail threads, tickets, repositories, docs, and deal data into a consolidated company brain.
         </p>
       </div>
 
@@ -804,7 +804,7 @@ function IntegrationsPageContent() {
               <h4 className="font-semibold text-violet-300">Linear setup</h4>
               <ol className="list-decimal pl-4 space-y-1">
                 <li>Create a Linear personal API key from account security settings.</li>
-                <li>Paste the key below. AICoS uses Linear&apos;s official npm SDK.</li>
+                <li>Paste the key below. TAI Chief uses Linear&apos;s official npm SDK.</li>
                 <li>After connecting, open <code className="text-violet-300">/tickets</code> and click <strong>Sync Linear Tickets</strong>.</li>
               </ol>
             </div>
@@ -860,7 +860,7 @@ function IntegrationsPageContent() {
               <ol className="list-decimal pl-4 space-y-1">
                 <li>Generate a ClickUp personal API token from ClickUp Apps settings, or use OAuth if configured.</li>
                 <li>Paste the token below. Personal tokens usually begin with <code className="text-emerald-300">pk_</code>.</li>
-                <li>Workspace ID is optional. If omitted, AICoS uses the first authorized workspace.</li>
+                <li>Workspace ID is optional. If omitted, TAI Chief uses the first authorized workspace.</li>
                 <li>After connecting, open <code className="text-emerald-300">/clickup</code> and click <strong>Sync ClickUp</strong>.</li>
               </ol>
             </div>
@@ -1019,8 +1019,8 @@ function IntegrationsPageContent() {
               <h4 className="font-semibold text-rose-300">Asana setup</h4>
               <ol className="list-decimal pl-4 space-y-1">
                 <li>Create an Asana personal access token or OAuth token.</li>
-                <li>Grant access to the workspaces, projects, and tasks you want AICoS to read.</li>
-                <li>Workspace GID is optional. If omitted, AICoS uses the first authorized workspace.</li>
+                <li>Grant access to the workspaces, projects, and tasks you want TAI Chief to read.</li>
+                <li>Workspace GID is optional. If omitted, TAI Chief uses the first authorized workspace.</li>
                 <li>Project GIDs are optional. Use comma-separated project GIDs to limit sync scope.</li>
                 <li>After connecting, open <code className="text-rose-300">/asana</code> and click <strong>Sync Asana</strong>.</li>
               </ol>

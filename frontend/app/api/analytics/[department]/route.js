@@ -99,7 +99,7 @@ const createAnalysis = async (department, context = {}) => {
 
   const response = await guardedResponsesCreate(client, {
     model: 'gpt-5.5',
-    instructions: 'You are AICoS - AI Chief of Staff, an elite enterprise operating intelligence assistant. You speak directly to the CEO. Provide extremely concise, analytical, action-oriented executive assessments. Never use corporate filler words or fluff. Focus on metrics, risk management, and strategic priority execution.',
+    instructions: 'You are TAI Chief, an elite enterprise operating intelligence assistant. You speak directly to the CEO. Provide extremely concise, analytical, action-oriented executive assessments. Never use corporate filler words or fluff. Focus on metrics, risk management, and strategic priority execution.',
     input: buildAnalyticsInput(department, targetFocus, hydratedContext),
   });
 

@@ -32,7 +32,7 @@ export default function Home() {
           <div className="max-w-3xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-              AICoS - AI Chief of Staff online
+              TAI Chief online
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-4xl">
               Company command center for CEO-grade operating intelligence.
@@ -131,7 +131,7 @@ export default function Home() {
               </div>
               <div className="flex gap-3">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-[10px] text-indigo-200">3</span>
-                <p>Use AICoS synthesis to brief the CEO and route actions to teams.</p>
+                <p>Use TAI Chief synthesis to brief the CEO and route actions to teams.</p>
               </div>
             </div>
           </div>

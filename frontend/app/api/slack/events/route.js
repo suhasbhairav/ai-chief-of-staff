@@ -91,7 +91,7 @@ export async function POST(request) {
           `- ${wrapUntrustedData("waiting-owner", w.owner, 200)}: ${wrapUntrustedData("waiting-title", w.title, 500)} (${w.status})`
         ).join("\n");
 
-        const systemPrompt = `You are Aegis, the Slack agent for AICoS - AI Chief of Staff. You speak directly to the CEO, Richard. 
+        const systemPrompt = `You are Aegis, the Slack agent for TAI Chief. You speak directly to the CEO, Richard. 
 Respond to Richard's message inside Slack. Keep replies extremely concise, metric-focused, and action-oriented. Never use fluff or filler.
 
 Current metrics context:

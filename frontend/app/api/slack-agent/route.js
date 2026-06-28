@@ -81,7 +81,7 @@ const buildWaitingContext = (todoStore) => {
 };
 
 const buildSystemPrompt = ({ metricsContext, todosContext, waitingContext }) => `
-You are Aegis, the Slack agent for AICoS - AI Chief of Staff, operating inside the company's Slack workspace.
+You are Aegis, the Slack agent for TAI Chief, operating inside the company's Slack workspace.
 You speak directly to the CEO. Be concise, analytical, action-oriented, and metric-driven. Avoid filler.
 
 Company operating metrics:
@@ -210,7 +210,7 @@ export async function POST(request) {
 
     if (!openAiApiKey) {
       return jsonError(
-        "OPENAI_API_KEY is missing. Add it to frontend/.env.local or frontend/.env to activate the AICoS Slack agent.",
+        "OPENAI_API_KEY is missing. Add it to frontend/.env.local or frontend/.env to activate the TAI Chief Slack agent.",
         500
       );
     }

@@ -31,7 +31,7 @@ const DEPARTMENT_IDS = [
   "strategy",
 ];
 
-const buildPlannerPrompt = () => `You are the retrieval planner for AICoS - AI Chief of Staff.
+const buildPlannerPrompt = () => `You are the retrieval planner for TAI Chief.
 Decide whether the CEO question requires searching department operating data in Supabase vector embeddings.
 
 Return JSON only:
@@ -46,7 +46,7 @@ Use retrieval for questions about metrics, departments, risks, priorities, perfo
 Skip retrieval only for generic product/help questions that do not need company data.`;
 
 const buildAnswerPrompt = ({ plan, organizationSummary, searchResults, retrievalError }) => `
-You are AICoS - AI Chief of Staff, an elite operating partner for the CEO.
+You are TAI Chief, an elite operating partner for the CEO.
 Answer like a concise operating partner: direct, specific, metric-aware, and action-oriented.
 
 Planner decision:

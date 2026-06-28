@@ -1,6 +1,6 @@
 <div align="center">
 
-# AICoS - AI Chief of Staff
+# TAI Chief
 
 ### The open-source AI operating system for CEOs
 
@@ -35,7 +35,7 @@ Independent personal project. Completely open source under the MIT License.
 
 <br />
 
-![AICoS - AI Chief of Staff executive dashboard](screenshot.png)
+![TAI Chief executive dashboard](screenshot.png)
 
 </div>
 
@@ -43,7 +43,7 @@ Independent personal project. Completely open source under the MIT License.
 
 ## Why This Exists
 
-AICoS - AI Chief of Staff is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, and OpenAI-generated recommendations.
+TAI Chief is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, and OpenAI-generated recommendations.
 
 The product is designed around a simple idea: every important department should report the metrics a serious CEO would actually inspect, and the Executive dashboard should synthesize those signals into company-level operating judgment.
 
@@ -411,13 +411,13 @@ Primary tables:
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
-For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, board memos, historical imports, and vector search.
+For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, board memos, historical imports, and vector search.
 
 ---
 
 ## Clerk Authentication
 
-AICoS uses Clerk for application authentication.
+TAI Chief uses Clerk for application authentication.
 
 - `ClerkProvider` wraps the app in [frontend/app/layout.js](frontend/app/layout.js).
 - Navbar auth controls show `Sign In` and `Sign Up` for signed-out users.
@@ -656,7 +656,7 @@ The GitHub overview stores syncs in `github_repo_snapshots` and tracks repositor
 This is a real Asana REST API integration for teams that run work management, cross-functional initiatives, launch plans, and operating cadences in Asana.
 
 1. Create an Asana personal access token or OAuth token.
-2. Grant access to the workspaces, projects, and tasks AICoS should read.
+2. Grant access to the workspaces, projects, and tasks TAI Chief should read.
 3. Add env vars in Vercel, or connect Asana manually from `/integrations`.
 4. Optional: set `ASANA_WORKSPACE_GID` to choose a workspace.
 5. Optional: set `ASANA_PROJECT_GIDS` to comma-separated project GIDs.

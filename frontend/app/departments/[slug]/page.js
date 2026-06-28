@@ -1115,7 +1115,7 @@ export default function DepartmentPage() {
       setInsights(data.analysis || "No executive insights returned for this division layout.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown analytics error";
-      setInsights(`Error generating AICoS synthesis: ${message}`);
+      setInsights(`Error generating TAI Chief synthesis: ${message}`);
     } finally {
       setLoadingInsights(false);
     }
@@ -1288,7 +1288,7 @@ export default function DepartmentPage() {
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-sky-200">Notion Product OKR Tracker</h3>
               <p className="mt-1 text-xs text-zinc-400">
-                Syncs a real Notion OKR database into AICoS for product objective health, ownership, and risk tracking.
+                Syncs a real Notion OKR database into TAI Chief for product objective health, ownership, and risk tracking.
               </p>
             </div>
             <button
@@ -1650,7 +1650,7 @@ export default function DepartmentPage() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-sm">✨</span>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-300">AICoS Intelligence Synthesis</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-300">TAI Chief Intelligence Synthesis</h3>
           </div>
           <button 
             onClick={() => fetchInsights(departmentId)} 

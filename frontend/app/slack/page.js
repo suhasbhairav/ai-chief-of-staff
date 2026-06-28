@@ -16,7 +16,7 @@ export default function SlackPage() {
       sender: "ChiefStaff AI",
       avatar: "👑",
       time: "Today",
-      text: "Hey Richard! I'm Aegis from AICoS - AI Chief of Staff. I'm connected to your email, calendar, and Slack workspace channels. I've compiled your morning task brief.\n\n*How can I help you run the company today?*\n- 'What are my top priorities?'\n- 'Complete task-3'\n- 'Delegate task-1 to Jim'\n- 'Draft a response to Gavin Belson'",
+      text: "Hey Richard! I'm Aegis from TAI Chief. I'm connected to your email, calendar, and Slack workspace channels. I've compiled your morning task brief.\n\n*How can I help you run the company today?*\n- 'What are my top priorities?'\n- 'Complete task-3'\n- 'Delegate task-1 to Jim'\n- 'Draft a response to Gavin Belson'",
       isAgent: true
     }
   ]);
