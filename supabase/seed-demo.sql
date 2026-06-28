@@ -22,7 +22,8 @@ truncate table
   public.confluence_content_snapshots,
   public.github_repo_snapshots,
   public.asana_workspace_snapshots,
-  public.mailchimp_marketing_snapshots
+  public.mailchimp_marketing_snapshots,
+  public.quickbooks_accounting_snapshots
 restart identity cascade;
 
 create temporary table demo_department_seed (
@@ -409,7 +410,8 @@ select
       'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://tai-chief-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true),
       'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'tai-chief-demo', 'repos', 'tai-chief-web,tai-chief-api,tai-chief-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true),
       'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'TAI Chief Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
-      'mailchimp', jsonb_build_object('connected', true, 'name', 'Mailchimp Marketing', 'icon', '📬', 'server_prefix', 'us21', 'account_id', 'demo-mailchimp-account', 'account_name', 'TAI Chief Growth', 'user_email', 'demo-ceo@example.com', 'hasToken', true)
+      'mailchimp', jsonb_build_object('connected', true, 'name', 'Mailchimp Marketing', 'icon', '📬', 'server_prefix', 'us21', 'account_id', 'demo-mailchimp-account', 'account_name', 'TAI Chief Growth', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
+      'quickbooks', jsonb_build_object('connected', true, 'name', 'QuickBooks Accounting', 'icon', '📗', 'realm_id', 'demo-qbo-company', 'company_name', 'TAI Chief Demo Co', 'environment', 'sandbox', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -654,6 +656,27 @@ values (
   ]'::jsonb,
   '{"totalAudiences":3,"totalContacts":98250,"subscribedContacts":98250,"unsubscribedContacts":1870,"cleanedContacts":820,"avgOpenRate":31,"avgClickRate":5,"totalCampaigns":4,"sentCampaigns":3,"scheduledCampaigns":0,"draftCampaigns":1,"totalEmailsSent":98250,"totalOpens":33812,"totalClicks":4692,"totalUnsubscribes":107,"totalBounces":229,"audienceBreakdown":[{"name":"Enterprise Operators","count":48250},{"name":"Founder Newsletter","count":31600},{"name":"Customer Lifecycle","count":18400}],"campaignStatusBreakdown":[{"name":"sent","count":3},{"name":"save","count":1}],"campaignPerformance":[{"name":"Q3 CEO Operating System Launch","openRate":41.2,"clickRate":7.4},{"name":"Founder Weekly: Metrics That Matter","openRate":33.8,"clickRate":4.9},{"name":"Lifecycle Re-activation Sprint","openRate":17.4,"clickRate":1.6}],"topRisks":[{"id":"camp-3","title":"Lifecycle Re-activation Sprint","audienceName":"Customer Lifecycle","emailsSent":18400,"openRate":17.4,"clickRate":1.6,"unsubscribed":44,"hardBounces":65,"softBounces":39,"riskType":"Low open rate"}]}'::jsonb,
   '{"source":"mailchimp","accountName":"TAI Chief Growth","syncedAt":"2026-09-30T18:45:00Z"}'::jsonb
+);
+
+insert into public.quickbooks_accounting_snapshots (realm_id, company_name, environment, synced_at, accounts, reports, summary, content)
+values (
+  'demo-qbo-company',
+  'TAI Chief Demo Co',
+  'sandbox',
+  '2026-09-30T18:50:00Z',
+  '[
+    {"id":"1","name":"Checking","fullyQualifiedName":"Checking","active":true,"classification":"Asset","accountType":"Bank","accountSubType":"Checking","currentBalance":4320000,"currentBalanceWithSubAccounts":4320000,"currency":"USD"},
+    {"id":"2","name":"Accounts Receivable","fullyQualifiedName":"Accounts Receivable","active":true,"classification":"Asset","accountType":"Accounts Receivable","accountSubType":"AccountsReceivable","currentBalance":552000,"currentBalanceWithSubAccounts":552000,"currency":"USD"},
+    {"id":"3","name":"Accounts Payable","fullyQualifiedName":"Accounts Payable","active":true,"classification":"Liability","accountType":"Accounts Payable","accountSubType":"AccountsPayable","currentBalance":382000,"currentBalanceWithSubAccounts":382000,"currency":"USD"},
+    {"id":"4","name":"Subscription Revenue","fullyQualifiedName":"Income:Subscription Revenue","active":true,"classification":"Revenue","accountType":"Income","accountSubType":"ServiceFeeIncome","currentBalance":884000,"currentBalanceWithSubAccounts":884000,"currency":"USD"},
+    {"id":"5","name":"Cloud Infrastructure","fullyQualifiedName":"Expenses:Cloud Infrastructure","active":true,"classification":"Expense","accountType":"Expense","accountSubType":"SuppliesMaterials","currentBalance":207000,"currentBalanceWithSubAccounts":207000,"currency":"USD"},
+    {"id":"6","name":"Payroll Expense","fullyQualifiedName":"Expenses:Payroll Expense","active":true,"classification":"Expense","accountType":"Expense","accountSubType":"PayrollExpenses","currentBalance":372000,"currentBalanceWithSubAccounts":372000,"currency":"USD"},
+    {"id":"7","name":"Long Term Debt","fullyQualifiedName":"Long Term Debt","active":true,"classification":"Liability","accountType":"Long Term Liability","accountSubType":"NotesPayable","currentBalance":825000,"currentBalanceWithSubAccounts":825000,"currency":"USD"},
+    {"id":"8","name":"Owner Equity","fullyQualifiedName":"Owner Equity","active":true,"classification":"Equity","accountType":"Equity","accountSubType":"OwnersEquity","currentBalance":3668000,"currentBalanceWithSubAccounts":3668000,"currency":"USD"}
+  ]'::jsonb,
+  '{"profitAndLoss":{"Header":{"ReportName":"ProfitAndLoss"},"Rows":{"Row":[{"Summary":{"ColData":[{"value":"Net Income"},{"value":"184000"}]}}]}},"balanceSheet":{"Header":{"ReportName":"BalanceSheet"},"Rows":{"Row":[]}},"cashFlow":{"Header":{"ReportName":"CashFlow"},"Rows":{"Row":[]}}}'::jsonb,
+  '{"totalAccounts":8,"activeAccounts":8,"bankAccounts":1,"arBalance":552000,"apBalance":382000,"incomeBalance":884000,"expenseBalance":579000,"assetBalance":4872000,"liabilityBalance":1207000,"equityBalance":3668000,"netIncome":184000,"cashBalance":4320000,"accountTypeBreakdown":[{"name":"Expense","count":2},{"name":"Bank","count":1},{"name":"Accounts Receivable","count":1},{"name":"Accounts Payable","count":1},{"name":"Income","count":1},{"name":"Long Term Liability","count":1},{"name":"Equity","count":1}],"balanceBreakdown":[{"name":"Assets","count":4872000},{"name":"Liabilities","count":1207000},{"name":"Equity","count":3668000},{"name":"Income","count":884000},{"name":"Expenses","count":579000}],"topAccounts":[{"id":"1","name":"Checking","fullyQualifiedName":"Checking","active":true,"classification":"Asset","accountType":"Bank","accountSubType":"Checking","currentBalance":4320000,"currentBalanceWithSubAccounts":4320000,"currency":"USD"},{"id":"8","name":"Owner Equity","fullyQualifiedName":"Owner Equity","active":true,"classification":"Equity","accountType":"Equity","accountSubType":"OwnersEquity","currentBalance":3668000,"currentBalanceWithSubAccounts":3668000,"currency":"USD"},{"id":"7","name":"Long Term Debt","fullyQualifiedName":"Long Term Debt","active":true,"classification":"Liability","accountType":"Long Term Liability","accountSubType":"NotesPayable","currentBalance":825000,"currentBalanceWithSubAccounts":825000,"currency":"USD"}],"topRisks":[]}'::jsonb,
+  '{"source":"quickbooks","companyName":"TAI Chief Demo Co","environment":"sandbox","syncedAt":"2026-09-30T18:50:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (

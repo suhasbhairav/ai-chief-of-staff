@@ -136,6 +136,12 @@ export default function RootLayout({ children }) {
                       icon: "📬",
                     },
                     {
+                      id: "quickbooks",
+                      name: "QuickBooks Accounting",
+                      href: "/quickbooks",
+                      icon: "📗",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",

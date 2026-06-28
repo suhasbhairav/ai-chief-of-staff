@@ -40,6 +40,13 @@ function IntegrationsPageContent() {
   const [mailchimpApiKey, setMailchimpApiKey] = useState("");
   const [mailchimpServerPrefix, setMailchimpServerPrefix] = useState("");
   const [showMailchimpForm, setShowMailchimpForm] = useState(false);
+  const [quickbooksAccessToken, setQuickbooksAccessToken] = useState("");
+  const [quickbooksRefreshToken, setQuickbooksRefreshToken] = useState("");
+  const [quickbooksClientId, setQuickbooksClientId] = useState("");
+  const [quickbooksClientSecret, setQuickbooksClientSecret] = useState("");
+  const [quickbooksRealmId, setQuickbooksRealmId] = useState("");
+  const [quickbooksEnvironment, setQuickbooksEnvironment] = useState("sandbox");
+  const [showQuickbooksForm, setShowQuickbooksForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -508,6 +515,63 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleQuickBooksSubmit = async (e) => {
+    e.preventDefault();
+    if (!quickbooksRealmId.trim()) {
+      setApiError("QuickBooks realm ID is required.");
+      return;
+    }
+    if (!quickbooksAccessToken.trim() && !quickbooksRefreshToken.trim()) {
+      setApiError("QuickBooks access token or refresh token is required.");
+      return;
+    }
+    if (quickbooksRefreshToken.trim() && (!quickbooksClientId.trim() || !quickbooksClientSecret.trim())) {
+      setApiError("Client ID and client secret are required when using a QuickBooks refresh token.");
+      return;
+    }
+
+    setConnectingId("quickbooks");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quickbooks: {
+            access_token: quickbooksAccessToken.trim(),
+            refresh_token: quickbooksRefreshToken.trim(),
+            client_id: quickbooksClientId.trim(),
+            client_secret: quickbooksClientSecret.trim(),
+            realm_id: quickbooksRealmId.trim(),
+            environment: quickbooksEnvironment,
+            minor_version: "75",
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify QuickBooks connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("QuickBooks Online accounting connected successfully.");
+      setQuickbooksAccessToken("");
+      setQuickbooksRefreshToken("");
+      setQuickbooksClientId("");
+      setQuickbooksClientSecret("");
+      setQuickbooksRealmId("");
+      setQuickbooksEnvironment("sandbox");
+      setShowQuickbooksForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect QuickBooks");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -596,6 +660,11 @@ function IntegrationsPageContent() {
       description: "Sync Mailchimp audiences, campaigns, and reports for owned-audience health, engagement, unsubscribes, bounces, and marketing risk.",
       color: "from-yellow-500/15 to-[#121214]",
       iconBg: "bg-yellow-500/10 text-yellow-100",
+    },
+    quickbooks: {
+      description: "Sync QuickBooks Online chart of accounts and finance reports for cash, receivables, payables, income, expenses, and accounting risk.",
+      color: "from-emerald-500/15 to-[#121214]",
+      iconBg: "bg-emerald-500/10 text-emerald-200",
     }
   };
 
@@ -647,6 +716,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with Asana REST API and validating workspace access..."
                 : connectingId === "mailchimp"
                   ? "Connecting with Mailchimp Marketing API and validating account access..."
+                : connectingId === "quickbooks"
+                  ? "Connecting with QuickBooks Online and validating company access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -1121,6 +1192,45 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showQuickbooksForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect QuickBooks Online</h3>
+              <button onClick={() => setShowQuickbooksForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-emerald-300">QuickBooks setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create an Intuit Developer app and connect it to a QuickBooks Online company.</li>
+                <li>Use the company <code className="text-emerald-300">realmId</code> from the OAuth callback.</li>
+                <li>Paste either a short-lived access token, or a refresh token with client ID and client secret.</li>
+                <li>Choose sandbox or production to match the connected company.</li>
+                <li>After connecting, open <code className="text-emerald-300">/quickbooks</code> and click <strong>Sync QuickBooks</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleQuickBooksSubmit} className="space-y-4">
+              <input type="text" value={quickbooksRealmId} onChange={(e) => setQuickbooksRealmId(e.target.value)} placeholder="QuickBooks realm ID / company ID" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" required />
+              <select value={quickbooksEnvironment} onChange={(e) => setQuickbooksEnvironment(e.target.value)} className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                <option value="sandbox">Sandbox</option>
+                <option value="production">Production</option>
+              </select>
+              <input type="password" value={quickbooksAccessToken} onChange={(e) => setQuickbooksAccessToken(e.target.value)} placeholder="Access token, optional if using refresh token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+              <input type="password" value={quickbooksRefreshToken} onChange={(e) => setQuickbooksRefreshToken(e.target.value)} placeholder="Refresh token, optional" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+              <input type="text" value={quickbooksClientId} onChange={(e) => setQuickbooksClientId(e.target.value)} placeholder="Client ID, required with refresh token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+              <input type="password" value={quickbooksClientSecret} onChange={(e) => setQuickbooksClientSecret(e.target.value)} placeholder="Client secret, required with refresh token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowQuickbooksForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -1140,6 +1250,7 @@ function IntegrationsPageContent() {
           const isGitHub = id === "github";
           const isAsana = id === "asana";
           const isMailchimp = id === "mailchimp";
+          const isQuickBooks = id === "quickbooks";
 
           return (
             <div
@@ -1242,6 +1353,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Account:</span> {info.account_name || info.account_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_email || "Mailchimp API key"}</div>
                     <div><span className="text-zinc-600 font-semibold">Server:</span> {info.server_prefix || "Auto-detected"}</div>
+                  </div>
+                )}
+
+                {info.connected && isQuickBooks && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Company:</span> {info.company_name || info.realm_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Realm ID:</span> {info.realm_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Environment:</span> {info.environment || "sandbox"}</div>
                   </div>
                 )}
               </div>
@@ -1351,6 +1470,13 @@ function IntegrationsPageContent() {
                     className="flex w-full items-center justify-center rounded-lg bg-yellow-500 hover:bg-yellow-400 py-2.5 text-xs font-semibold text-zinc-950 transition-colors"
                   >
                     Connect Mailchimp
+                  </button>
+                ) : isQuickBooks ? (
+                  <button
+                    onClick={() => setShowQuickbooksForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect QuickBooks
                   </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">

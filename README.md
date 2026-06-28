@@ -26,6 +26,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="GitHub" src="https://img.shields.io/badge/GitHub-PRs%20Bugs%20Repos-181717?style=for-the-badge&logo=github" />
 <img alt="Asana" src="https://img.shields.io/badge/Asana-Work%20Management-F06A6A?style=for-the-badge&logo=asana" />
 <img alt="Mailchimp" src="https://img.shields.io/badge/Mailchimp-Marketing%20API-FFE01B?style=for-the-badge&logo=mailchimp" />
+<img alt="QuickBooks" src="https://img.shields.io/badge/QuickBooks-Accounting-2CA01C?style=for-the-badge&logo=quickbooks" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -244,6 +245,7 @@ The product is designed around a simple idea: every important department should 
 | GitHub Engineering | Tracks repositories, pull requests, issues, bug queues, stale work, and engineering risk | GitHub REST API + Supabase |
 | Asana Work Management | Tracks projects, tasks, owners, overdue work, due-soon work, stale execution, and delivery risk | Asana REST API + Supabase |
 | Mailchimp Marketing | Tracks audiences, campaigns, reports, open/click rates, unsubscribes, bounces, and email risk | Mailchimp Marketing API + Supabase |
+| QuickBooks Accounting | Tracks chart of accounts, cash, A/R, A/P, income, expenses, reports, and finance risk | QuickBooks Online Accounting API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -303,6 +305,7 @@ ai-chief-of-staff/
       github/page.js                       # GitHub CEO PR/bug/repository overview
       asana/page.js                        # Asana CEO work management overview
       mailchimp/page.js                    # Mailchimp CEO marketing overview
+      quickbooks/page.js                   # QuickBooks CEO accounting overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
@@ -316,6 +319,7 @@ ai-chief-of-staff/
         github/overview/route.js           # GitHub repository/PR/issue sync and store
         asana/overview/route.js            # Asana project/task sync and store
         mailchimp/overview/route.js        # Mailchimp audience/campaign/report sync and store
+        quickbooks/overview/route.js       # QuickBooks account/report sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -366,11 +370,13 @@ flowchart LR
   U[GitHub REST API] --> V[GitHub Repo Snapshot]
   W[Asana REST API] --> X[Asana Workspace Snapshot]
   Y[Mailchimp Marketing API] --> Z[Mailchimp Marketing Snapshot]
+  AA[QuickBooks Online API] --> AB[QuickBooks Accounting Snapshot]
   R --> G
   T --> G
   V --> G
   X --> G
   Z --> G
+  AB --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -389,6 +395,7 @@ flowchart LR
 14. GitHub sync stores repositories, PRs, issues, bugs, stale engineering work, and repo health for CEO review.
 15. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
 16. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
+17. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
 
 ---
 
@@ -412,6 +419,7 @@ Primary tables:
 | `github_repo_snapshots` | Synced GitHub repositories, pull requests, issues, bugs, and summaries |
 | `asana_workspace_snapshots` | Synced Asana projects, tasks, owners, overdue work, stale work, and summaries |
 | `mailchimp_marketing_snapshots` | Synced Mailchimp audiences, campaigns, reports, engagement, unsubscribes, bounces, and summaries |
+| `quickbooks_accounting_snapshots` | Synced QuickBooks chart of accounts, reports, balances, receivables, payables, and summaries |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -419,7 +427,7 @@ Primary tables:
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
-For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, Mailchimp campaigns, board memos, historical imports, and vector search.
+For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, Mailchimp campaigns, QuickBooks accounting, board memos, historical imports, and vector search.
 
 ---
 
@@ -698,6 +706,29 @@ The Mailchimp overview stores syncs in `mailchimp_marketing_snapshots` and track
 
 ---
 
+## QuickBooks Accounting
+
+This is a real QuickBooks Online Accounting API integration for CEOs who want accounting truth next to operating metrics.
+
+1. Create an Intuit Developer app and connect it to a QuickBooks Online company.
+2. Capture the OAuth `realmId`, which is the QuickBooks company ID.
+3. Add either a short-lived access token, or a refresh token with client ID and client secret.
+4. Set `QUICKBOOKS_ENVIRONMENT` to `sandbox` or `production`.
+5. Open `/quickbooks` and click `Sync QuickBooks`.
+
+```bash
+QUICKBOOKS_REALM_ID=your_quickbooks_company_id
+QUICKBOOKS_ENVIRONMENT=sandbox
+QUICKBOOKS_ACCESS_TOKEN=your_oauth_access_token
+QUICKBOOKS_CLIENT_ID=your_intuit_client_id_optional
+QUICKBOOKS_CLIENT_SECRET=your_intuit_client_secret_optional
+QUICKBOOKS_REFRESH_TOKEN=your_oauth_refresh_token_optional
+```
+
+The QuickBooks overview stores syncs in `quickbooks_accounting_snapshots` and tracks chart of accounts, bank cash, A/R, A/P, income, expenses, assets, liabilities, equity, P&L, balance sheet, cash flow, largest accounts, and CEO finance risk queue.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -765,6 +796,12 @@ ASANA_WORKSPACE_GID=your_workspace_gid_optional
 ASANA_PROJECT_GIDS=project_gid_one,project_gid_two_optional
 MAILCHIMP_API_KEY=your_mailchimp_api_key
 MAILCHIMP_SERVER_PREFIX=us21
+QUICKBOOKS_REALM_ID=your_quickbooks_company_id
+QUICKBOOKS_ENVIRONMENT=sandbox
+QUICKBOOKS_ACCESS_TOKEN=your_oauth_access_token
+QUICKBOOKS_CLIENT_ID=your_intuit_client_id_optional
+QUICKBOOKS_CLIENT_SECRET=your_intuit_client_secret_optional
+QUICKBOOKS_REFRESH_TOKEN=your_oauth_refresh_token_optional
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
@@ -879,8 +916,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 16. Open `/github` to sync and inspect GitHub PRs, bugs, stale issues, and repo health.
 17. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
 18. Open `/mailchimp` to sync and inspect audience health, campaign engagement, unsubscribes, bounces, and email risk.
-19. Export a PDF report or board memo.
-20. Use `/todo` and `/slack` to track commitments and follow-ups.
+19. Open `/quickbooks` to sync and inspect accounting balances, receivables, payables, and finance risk.
+20. Export a PDF report or board memo.
+21. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -903,6 +941,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /github                          GitHub CEO PR/bug/repository overview
 /asana                           Asana CEO work management overview
 /mailchimp                       Mailchimp CEO marketing overview
+/quickbooks                      QuickBooks CEO accounting overview
 /sign-in                         Clerk sign-in
 /sign-up                         Clerk sign-up
 /api/current-data                 Supabase JSONB store
@@ -920,6 +959,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/github/overview             GitHub repository/PR/issue sync endpoint
 /api/asana/overview              Asana project/task sync endpoint
 /api/mailchimp/overview          Mailchimp audience/campaign/report sync endpoint
+/api/quickbooks/overview         QuickBooks account/report sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/slack/authorize Slack OAuth start

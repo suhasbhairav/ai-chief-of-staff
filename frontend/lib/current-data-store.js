@@ -131,6 +131,7 @@ export const readOrganizationSummary = async () => {
       "github-workspace.json",
       "asana-workspace.json",
       "mailchimp-marketing.json",
+      "quickbooks-accounting.json",
       "integrations.json"
     ];
 
@@ -599,6 +600,7 @@ const DEFAULT_INTEGRATIONS = {
   github: { connected: false, name: "GitHub Engineering", icon: "🐙" },
   asana: { connected: false, name: "Asana Work Management", icon: "🔴" },
   mailchimp: { connected: false, name: "Mailchimp Marketing", icon: "📬" },
+  quickbooks: { connected: false, name: "QuickBooks Accounting", icon: "📗" },
 };
 
 export const readIntegrations = async () => {
@@ -1642,6 +1644,121 @@ export const writeMailchimpMarketing = async ({
 
   if (error) {
     throw new Error(`Unable to save Mailchimp marketing snapshot: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// QUICKBOOKS ACCOUNTING / ACCOUNT / REPORT STORE
+// ==========================================
+
+const DEFAULT_QUICKBOOKS_ACCOUNTING_STORE = {
+  syncedAt: null,
+  realmId: null,
+  companyName: null,
+  environment: "sandbox",
+  accounts: [],
+  reports: {},
+  summary: {
+    totalAccounts: 0,
+    activeAccounts: 0,
+    bankAccounts: 0,
+    arBalance: 0,
+    apBalance: 0,
+    incomeBalance: 0,
+    expenseBalance: 0,
+    assetBalance: 0,
+    liabilityBalance: 0,
+    equityBalance: 0,
+    netIncome: 0,
+    cashBalance: 0,
+    accountTypeBreakdown: [],
+    balanceBreakdown: [],
+    topAccounts: [],
+    topRisks: [],
+  },
+};
+
+export const readQuickBooksAccounting = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const quickbooksPath = path.join(dir, "quickbooks-accounting.json");
+    if (!fs.existsSync(quickbooksPath)) return DEFAULT_QUICKBOOKS_ACCOUNTING_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(quickbooksPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read quickbooks-accounting.json:", error);
+      return DEFAULT_QUICKBOOKS_ACCOUNTING_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("quickbooks_accounting_snapshots")
+    .select("realm_id, company_name, environment, synced_at, accounts, reports, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read QuickBooks accounting snapshot: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_QUICKBOOKS_ACCOUNTING_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    realmId: data.realm_id,
+    companyName: data.company_name,
+    environment: data.environment || "sandbox",
+    accounts: data.accounts || [],
+    reports: data.reports || {},
+    summary: data.summary || DEFAULT_QUICKBOOKS_ACCOUNTING_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeQuickBooksAccounting = async ({
+  realmId,
+  companyName,
+  environment,
+  accounts,
+  reports,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    realmId: realmId || null,
+    companyName: companyName || null,
+    environment: environment || "sandbox",
+    accounts: Array.isArray(accounts) ? accounts : [],
+    reports: reports || {},
+    summary: summary || DEFAULT_QUICKBOOKS_ACCOUNTING_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const quickbooksPath = path.join(dir, "quickbooks-accounting.json");
+    fs.writeFileSync(quickbooksPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("quickbooks_accounting_snapshots").insert({
+    realm_id: store.realmId,
+    company_name: store.companyName,
+    environment: store.environment,
+    synced_at: store.syncedAt,
+    accounts: store.accounts,
+    reports: store.reports,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save QuickBooks accounting snapshot: ${error.message}`);
   }
 
   return store;

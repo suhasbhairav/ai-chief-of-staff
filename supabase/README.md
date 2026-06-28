@@ -16,7 +16,7 @@ For a full demo workspace, run the seed file after the schema:
 -- paste supabase/seed-demo.sql here
 ```
 
-The seed resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, history, board memos, Slack, Notion, HubSpot, Linear, ClickUp, Jira, Confluence, GitHub, Asana, Mailchimp, and vector search rows.
+The seed resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, history, board memos, Slack, Notion, HubSpot, Linear, ClickUp, Jira, Confluence, GitHub, Asana, Mailchimp, QuickBooks, and vector search rows.
 
 The schema stores each department upload in `department_snapshots` with flexible `jsonb` columns:
 
@@ -46,6 +46,7 @@ Additional operating-system tables:
 - `github_repo_snapshots`: synced GitHub repositories, pull requests, issues, bug queues, and CEO engineering risk summaries.
 - `asana_workspace_snapshots`: synced Asana projects, tasks, owners, overdue work, stale work, and CEO execution summaries.
 - `mailchimp_marketing_snapshots`: synced Mailchimp audiences, campaigns, reports, engagement, unsubscribes, bounces, and CEO marketing summaries.
+- `quickbooks_accounting_snapshots`: synced QuickBooks chart of accounts, accounting reports, balances, receivables, payables, and CEO finance summaries.
 
 ## 2. Environment Variables
 
@@ -77,6 +78,12 @@ ASANA_WORKSPACE_GID=your-workspace-gid-optional
 ASANA_PROJECT_GIDS=project-gid-one,project-gid-two-optional
 MAILCHIMP_API_KEY=your-mailchimp-api-key
 MAILCHIMP_SERVER_PREFIX=us21
+QUICKBOOKS_REALM_ID=your-quickbooks-company-id
+QUICKBOOKS_ENVIRONMENT=sandbox
+QUICKBOOKS_ACCESS_TOKEN=your-oauth-access-token
+QUICKBOOKS_CLIENT_ID=your-intuit-client-id-optional
+QUICKBOOKS_CLIENT_SECRET=your-intuit-client-secret-optional
+QUICKBOOKS_REFRESH_TOKEN=your-oauth-refresh-token-optional
 ```
 
 The app uses the Supabase key only in Next.js route handlers. Do not expose the service role key in browser code.
@@ -101,7 +108,8 @@ The default embedding model produces 1536-dimensional vectors, matching `departm
 15. GitHub repositories, PRs, issues, and bugs sync through `/api/github/overview` into `github_repo_snapshots`.
 16. Asana projects, tasks, owners, and risks sync through `/api/asana/overview` into `asana_workspace_snapshots`.
 17. Mailchimp audiences, campaigns, and reports sync through `/api/mailchimp/overview` into `mailchimp_marketing_snapshots`.
-18. Board memo exports save memo metadata through `/api/board-memos`.
-19. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+18. QuickBooks accounts and accounting reports sync through `/api/quickbooks/overview` into `quickbooks_accounting_snapshots`.
+19. Board memo exports save memo metadata through `/api/board-memos`.
+20. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
 
 Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.

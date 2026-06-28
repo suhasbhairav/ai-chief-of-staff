@@ -11,6 +11,7 @@ import {
 import { validateGitHubToken } from "@/lib/github/server";
 import { validateAsanaToken } from "@/lib/asana/server";
 import { validateMailchimpToken } from "@/lib/mailchimp/server";
+import { validateQuickBooksCredentials } from "@/lib/quickbooks/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -150,6 +151,28 @@ const sanitizeIntegrations = (integrations) => ({
         connected: Boolean(integrations.mailchimp.connected || process.env.MAILCHIMP_API_KEY),
       }
     : integrations?.mailchimp,
+  quickbooks: integrations?.quickbooks
+    ? {
+        ...integrations.quickbooks,
+        access_token: undefined,
+        refresh_token: undefined,
+        client_secret: undefined,
+        hasToken: Boolean(
+          integrations.quickbooks.access_token ||
+            integrations.quickbooks.refresh_token ||
+            process.env.QUICKBOOKS_ACCESS_TOKEN ||
+            process.env.QUICKBOOKS_REFRESH_TOKEN
+        ),
+        realm_id: integrations.quickbooks.realm_id || process.env.QUICKBOOKS_REALM_ID || "",
+        environment:
+          integrations.quickbooks.environment || process.env.QUICKBOOKS_ENVIRONMENT || "sandbox",
+        connected: Boolean(
+          integrations.quickbooks.connected ||
+            (process.env.QUICKBOOKS_REALM_ID &&
+              (process.env.QUICKBOOKS_ACCESS_TOKEN || process.env.QUICKBOOKS_REFRESH_TOKEN))
+        ),
+      }
+    : integrations?.quickbooks,
 });
 
 export async function GET() {
@@ -176,6 +199,10 @@ export async function GET() {
       githubEnvConfigured: Boolean(process.env.GITHUB_TOKEN),
       asanaEnvConfigured: Boolean(process.env.ASANA_ACCESS_TOKEN),
       mailchimpEnvConfigured: Boolean(process.env.MAILCHIMP_API_KEY),
+      quickbooksEnvConfigured: Boolean(
+        process.env.QUICKBOOKS_REALM_ID &&
+          (process.env.QUICKBOOKS_ACCESS_TOKEN || process.env.QUICKBOOKS_REFRESH_TOKEN)
+      ),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -545,6 +572,63 @@ export async function POST(request) {
         ...current.mailchimp,
         ...payload.mailchimp,
         api_key: current.mailchimp.api_key,
+      };
+    }
+
+    if (
+      payload.quickbooks?.realm_id &&
+      (payload.quickbooks?.access_token || payload.quickbooks?.refresh_token)
+    ) {
+      try {
+        const account = await validateQuickBooksCredentials({
+          accessToken: payload.quickbooks.access_token?.trim(),
+          refreshToken: payload.quickbooks.refresh_token?.trim(),
+          clientId: payload.quickbooks.client_id?.trim(),
+          clientSecret: payload.quickbooks.client_secret?.trim(),
+          realmId: payload.quickbooks.realm_id.trim(),
+          environment: payload.quickbooks.environment?.trim() || "sandbox",
+          minorVersion: payload.quickbooks.minor_version?.trim() || "75",
+        });
+        payload.quickbooks = {
+          connected: true,
+          name: "QuickBooks Accounting",
+          icon: "📗",
+          access_token: payload.quickbooks.access_token?.trim(),
+          refresh_token: payload.quickbooks.refresh_token?.trim(),
+          client_id: payload.quickbooks.client_id?.trim(),
+          client_secret: payload.quickbooks.client_secret?.trim(),
+          realm_id: payload.quickbooks.realm_id.trim(),
+          environment: payload.quickbooks.environment?.trim() || "sandbox",
+          minor_version: payload.quickbooks.minor_version?.trim() || "75",
+          company_name: account.companyName,
+          country: account.country,
+          email: account.email,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `QuickBooks validation failed: ${error.message}. Use a valid QBO realm ID and OAuth access token, or refresh token with client credentials.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.quickbooks && payload.quickbooks.connected === false) {
+      payload.quickbooks = {
+        connected: false,
+        name: "QuickBooks Accounting",
+        icon: "📗",
+      };
+    } else if (
+      payload.quickbooks &&
+      !payload.quickbooks.access_token &&
+      !payload.quickbooks.refresh_token &&
+      (current.quickbooks?.access_token || current.quickbooks?.refresh_token)
+    ) {
+      payload.quickbooks = {
+        ...current.quickbooks,
+        ...payload.quickbooks,
+        access_token: current.quickbooks.access_token,
+        refresh_token: current.quickbooks.refresh_token,
+        client_secret: current.quickbooks.client_secret,
       };
     }
     
