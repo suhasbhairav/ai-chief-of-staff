@@ -10,6 +10,7 @@ import {
 } from "@/lib/atlassian/server";
 import { validateGitHubToken } from "@/lib/github/server";
 import { validateAsanaToken } from "@/lib/asana/server";
+import { validateMailchimpToken } from "@/lib/mailchimp/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -139,6 +140,16 @@ const sanitizeIntegrations = (integrations) => ({
         connected: Boolean(integrations.asana.connected || process.env.ASANA_ACCESS_TOKEN),
       }
     : integrations?.asana,
+  mailchimp: integrations?.mailchimp
+    ? {
+        ...integrations.mailchimp,
+        api_key: undefined,
+        hasToken: Boolean(integrations.mailchimp.api_key || process.env.MAILCHIMP_API_KEY),
+        server_prefix:
+          integrations.mailchimp.server_prefix || process.env.MAILCHIMP_SERVER_PREFIX || "",
+        connected: Boolean(integrations.mailchimp.connected || process.env.MAILCHIMP_API_KEY),
+      }
+    : integrations?.mailchimp,
 });
 
 export async function GET() {
@@ -164,6 +175,7 @@ export async function GET() {
       ),
       githubEnvConfigured: Boolean(process.env.GITHUB_TOKEN),
       asanaEnvConfigured: Boolean(process.env.ASANA_ACCESS_TOKEN),
+      mailchimpEnvConfigured: Boolean(process.env.MAILCHIMP_API_KEY),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -495,6 +507,44 @@ export async function POST(request) {
         ...current.asana,
         ...payload.asana,
         access_token: current.asana.access_token,
+      };
+    }
+
+    if (payload.mailchimp?.api_key) {
+      try {
+        const account = await validateMailchimpToken({
+          apiKey: payload.mailchimp.api_key.trim(),
+          serverPrefix: payload.mailchimp.server_prefix?.trim(),
+        });
+        payload.mailchimp = {
+          connected: true,
+          name: "Mailchimp Marketing",
+          icon: "📬",
+          api_key: payload.mailchimp.api_key.trim(),
+          server_prefix: account.serverPrefix,
+          account_id: account.accountId,
+          account_name: account.accountName,
+          user_email: account.email,
+          role: account.role,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Mailchimp validation failed: ${error.message}. Use a valid Marketing API key and server prefix such as us21.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.mailchimp && payload.mailchimp.connected === false) {
+      payload.mailchimp = {
+        connected: false,
+        name: "Mailchimp Marketing",
+        icon: "📬",
+      };
+    } else if (payload.mailchimp && !payload.mailchimp.api_key && current.mailchimp?.api_key) {
+      payload.mailchimp = {
+        ...current.mailchimp,
+        ...payload.mailchimp,
+        api_key: current.mailchimp.api_key,
       };
     }
     

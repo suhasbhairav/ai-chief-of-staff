@@ -130,6 +130,7 @@ export const readOrganizationSummary = async () => {
       "confluence-workspace.json",
       "github-workspace.json",
       "asana-workspace.json",
+      "mailchimp-marketing.json",
       "integrations.json"
     ];
 
@@ -597,6 +598,7 @@ const DEFAULT_INTEGRATIONS = {
   confluence: { connected: false, name: "Confluence Knowledge", icon: "📘" },
   github: { connected: false, name: "GitHub Engineering", icon: "🐙" },
   asana: { connected: false, name: "Asana Work Management", icon: "🔴" },
+  mailchimp: { connected: false, name: "Mailchimp Marketing", icon: "📬" },
 };
 
 export const readIntegrations = async () => {
@@ -1521,6 +1523,125 @@ export const writeAsanaWorkspace = async ({
 
   if (error) {
     throw new Error(`Unable to save Asana workspace: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// MAILCHIMP MARKETING / AUDIENCE / CAMPAIGN STORE
+// ==========================================
+
+const DEFAULT_MAILCHIMP_MARKETING_STORE = {
+  syncedAt: null,
+  accountId: null,
+  accountName: null,
+  audiences: [],
+  campaigns: [],
+  reports: [],
+  summary: {
+    totalAudiences: 0,
+    totalContacts: 0,
+    subscribedContacts: 0,
+    unsubscribedContacts: 0,
+    cleanedContacts: 0,
+    avgOpenRate: 0,
+    avgClickRate: 0,
+    totalCampaigns: 0,
+    sentCampaigns: 0,
+    scheduledCampaigns: 0,
+    draftCampaigns: 0,
+    totalEmailsSent: 0,
+    totalOpens: 0,
+    totalClicks: 0,
+    totalUnsubscribes: 0,
+    totalBounces: 0,
+    audienceBreakdown: [],
+    campaignStatusBreakdown: [],
+    campaignPerformance: [],
+    topRisks: [],
+  },
+};
+
+export const readMailchimpMarketing = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const mailchimpPath = path.join(dir, "mailchimp-marketing.json");
+    if (!fs.existsSync(mailchimpPath)) return DEFAULT_MAILCHIMP_MARKETING_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(mailchimpPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read mailchimp-marketing.json:", error);
+      return DEFAULT_MAILCHIMP_MARKETING_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("mailchimp_marketing_snapshots")
+    .select("account_id, account_name, synced_at, audiences, campaigns, reports, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Mailchimp marketing snapshot: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_MAILCHIMP_MARKETING_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    accountId: data.account_id,
+    accountName: data.account_name,
+    audiences: data.audiences || [],
+    campaigns: data.campaigns || [],
+    reports: data.reports || [],
+    summary: data.summary || DEFAULT_MAILCHIMP_MARKETING_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeMailchimpMarketing = async ({
+  accountId,
+  accountName,
+  audiences,
+  campaigns,
+  reports,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    accountId: accountId || null,
+    accountName: accountName || null,
+    audiences: Array.isArray(audiences) ? audiences : [],
+    campaigns: Array.isArray(campaigns) ? campaigns : [],
+    reports: Array.isArray(reports) ? reports : [],
+    summary: summary || DEFAULT_MAILCHIMP_MARKETING_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const mailchimpPath = path.join(dir, "mailchimp-marketing.json");
+    fs.writeFileSync(mailchimpPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("mailchimp_marketing_snapshots").insert({
+    account_id: store.accountId,
+    account_name: store.accountName,
+    synced_at: store.syncedAt,
+    audiences: store.audiences,
+    campaigns: store.campaigns,
+    reports: store.reports,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Mailchimp marketing snapshot: ${error.message}`);
   }
 
   return store;

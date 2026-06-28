@@ -130,6 +130,12 @@ export default function RootLayout({ children }) {
                       icon: "🔴",
                     },
                     {
+                      id: "mailchimp",
+                      name: "Mailchimp Marketing",
+                      href: "/mailchimp",
+                      icon: "📬",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",

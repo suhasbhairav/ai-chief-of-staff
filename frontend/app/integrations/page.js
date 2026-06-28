@@ -37,6 +37,9 @@ function IntegrationsPageContent() {
   const [asanaWorkspaceGid, setAsanaWorkspaceGid] = useState("");
   const [asanaProjectGids, setAsanaProjectGids] = useState("");
   const [showAsanaForm, setShowAsanaForm] = useState(false);
+  const [mailchimpApiKey, setMailchimpApiKey] = useState("");
+  const [mailchimpServerPrefix, setMailchimpServerPrefix] = useState("");
+  const [showMailchimpForm, setShowMailchimpForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -465,6 +468,46 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleMailchimpSubmit = async (e) => {
+    e.preventDefault();
+    if (!mailchimpApiKey.trim()) {
+      setApiError("Mailchimp Marketing API key is required.");
+      return;
+    }
+
+    setConnectingId("mailchimp");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mailchimp: {
+            api_key: mailchimpApiKey.trim(),
+            server_prefix: mailchimpServerPrefix.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Mailchimp connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Mailchimp Marketing API connected successfully.");
+      setMailchimpApiKey("");
+      setMailchimpServerPrefix("");
+      setShowMailchimpForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Mailchimp");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -548,6 +591,11 @@ function IntegrationsPageContent() {
       description: "Sync Asana projects and tasks for CEO-level work management, overdue work, stale execution, owners, and delivery risk.",
       color: "from-rose-500/15 to-[#121214]",
       iconBg: "bg-rose-500/10 text-rose-200",
+    },
+    mailchimp: {
+      description: "Sync Mailchimp audiences, campaigns, and reports for owned-audience health, engagement, unsubscribes, bounces, and marketing risk.",
+      color: "from-yellow-500/15 to-[#121214]",
+      iconBg: "bg-yellow-500/10 text-yellow-100",
     }
   };
 
@@ -597,6 +645,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with GitHub REST API and validating repository access..."
                 : connectingId === "asana"
                   ? "Connecting with Asana REST API and validating workspace access..."
+                : connectingId === "mailchimp"
+                  ? "Connecting with Mailchimp Marketing API and validating account access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -1040,6 +1090,37 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showMailchimpForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Mailchimp Marketing API</h3>
+              <button onClick={() => setShowMailchimpForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-yellow-100">Mailchimp setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a Mailchimp Marketing API key from account API keys.</li>
+                <li>The server prefix is the suffix after the dash in the API key, for example <code className="text-yellow-100">us21</code>.</li>
+                <li>If server prefix is omitted, TAI Chief will infer it from the API key suffix.</li>
+                <li>After connecting, open <code className="text-yellow-100">/mailchimp</code> and click <strong>Sync Mailchimp</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleMailchimpSubmit} className="space-y-4">
+              <input type="password" value={mailchimpApiKey} onChange={(e) => setMailchimpApiKey(e.target.value)} placeholder="Mailchimp API key, usually ending in -us21" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500" required />
+              <input type="text" value={mailchimpServerPrefix} onChange={(e) => setMailchimpServerPrefix(e.target.value)} placeholder="Server prefix, optional e.g. us21" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500" />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowMailchimpForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-xs font-semibold text-zinc-950 transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -1058,6 +1139,7 @@ function IntegrationsPageContent() {
           const isConfluence = id === "confluence";
           const isGitHub = id === "github";
           const isAsana = id === "asana";
+          const isMailchimp = id === "mailchimp";
 
           return (
             <div
@@ -1152,6 +1234,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Workspace:</span> {info.workspace_name || info.workspace_gid || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_email || info.user_name || "Asana token"}</div>
                     <div><span className="text-zinc-600 font-semibold">Projects:</span> {info.project_gids || "Auto-discover"}</div>
+                  </div>
+                )}
+
+                {info.connected && isMailchimp && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Account:</span> {info.account_name || info.account_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_email || "Mailchimp API key"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Server:</span> {info.server_prefix || "Auto-detected"}</div>
                   </div>
                 )}
               </div>
@@ -1254,6 +1344,13 @@ function IntegrationsPageContent() {
                     className="flex w-full items-center justify-center rounded-lg bg-rose-600 hover:bg-rose-500 py-2.5 text-xs font-semibold text-white transition-colors"
                   >
                     Connect Asana
+                  </button>
+                ) : isMailchimp ? (
+                  <button
+                    onClick={() => setShowMailchimpForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-yellow-500 hover:bg-yellow-400 py-2.5 text-xs font-semibold text-zinc-950 transition-colors"
+                  >
+                    Connect Mailchimp
                   </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">

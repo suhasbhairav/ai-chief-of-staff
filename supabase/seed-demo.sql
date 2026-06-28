@@ -21,7 +21,8 @@ truncate table
   public.jira_issue_snapshots,
   public.confluence_content_snapshots,
   public.github_repo_snapshots,
-  public.asana_workspace_snapshots
+  public.asana_workspace_snapshots,
+  public.mailchimp_marketing_snapshots
 restart identity cascade;
 
 create temporary table demo_department_seed (
@@ -407,7 +408,8 @@ select
       'jira', jsonb_build_object('connected', true, 'name', 'Jira Issues', 'icon', '🔷', 'site_url', 'https://tai-chief-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'jql', 'project in (PLAT, GTM, DATA) order by updated DESC', 'user_name', 'Demo CEO', 'hasToken', true),
       'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://tai-chief-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true),
       'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'tai-chief-demo', 'repos', 'tai-chief-web,tai-chief-api,tai-chief-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true),
-      'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'TAI Chief Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true)
+      'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'TAI Chief Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
+      'mailchimp', jsonb_build_object('connected', true, 'name', 'Mailchimp Marketing', 'icon', '📬', 'server_prefix', 'us21', 'account_id', 'demo-mailchimp-account', 'account_name', 'TAI Chief Growth', 'user_email', 'demo-ceo@example.com', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -627,6 +629,31 @@ values (
   ]'::jsonb,
   '{"totalProjects":3,"totalTasks":4,"openTasks":3,"completedTasks":1,"overdueTasks":2,"dueSoonTasks":1,"staleTasks":2,"unassignedTasks":1,"avgOpenAgeDays":22,"statusBreakdown":[{"name":"Open","count":3},{"name":"Completed","count":1},{"name":"Overdue","count":2},{"name":"Stale","count":2}],"projectBreakdown":[{"name":"Enterprise Readiness Program","count":2},{"name":"Q4 Enterprise Launch","count":1}],"ownerBreakdown":[{"name":"IT","count":1},{"name":"Product","count":1},{"name":"Unassigned","count":1}],"topRisks":[{"gid":"asana-2","name":"Close SOC2 procurement evidence gap","projectName":"Enterprise Readiness Program","assignee":"IT","url":"https://app.asana.com/0/enterprise-readiness/asana-2","isOverdue":true,"isStale":true,"isUnassigned":false,"ageDays":26},{"gid":"asana-3","name":"Assign owner for healthcare launch runbook","projectName":"Enterprise Readiness Program","assignee":"Unassigned","url":"https://app.asana.com/0/enterprise-readiness/asana-3","isOverdue":true,"isStale":true,"isUnassigned":true,"ageDays":21}]}'::jsonb,
   '{"source":"asana","workspaceName":"TAI Chief Operating Workspace","syncedAt":"2026-09-30T18:40:00Z"}'::jsonb
+);
+
+insert into public.mailchimp_marketing_snapshots (account_id, account_name, synced_at, audiences, campaigns, reports, summary, content)
+values (
+  'demo-mailchimp-account',
+  'TAI Chief Growth',
+  '2026-09-30T18:45:00Z',
+  '[
+    {"id":"aud-enterprise","name":"Enterprise Operators","createdAt":"2025-10-01T09:00:00Z","memberCount":48250,"unsubscribeCount":920,"cleanedCount":410,"memberCountSinceSend":640,"unsubscribeCountSinceSend":38,"avgSubscribeRate":0.42,"avgUnsubscribeRate":0.03},
+    {"id":"aud-founders","name":"Founder Newsletter","createdAt":"2025-06-12T09:00:00Z","memberCount":31600,"unsubscribeCount":740,"cleanedCount":290,"memberCountSinceSend":510,"unsubscribeCountSinceSend":25,"avgSubscribeRate":0.36,"avgUnsubscribeRate":0.02},
+    {"id":"aud-customers","name":"Customer Lifecycle","createdAt":"2026-01-15T09:00:00Z","memberCount":18400,"unsubscribeCount":210,"cleanedCount":120,"memberCountSinceSend":220,"unsubscribeCountSinceSend":9,"avgSubscribeRate":0.28,"avgUnsubscribeRate":0.01}
+  ]'::jsonb,
+  '[
+    {"id":"camp-1","webId":101,"type":"regular","status":"sent","title":"Q3 CEO Operating System Launch","subjectLine":"Run your company from one intelligence layer","createdAt":"2026-09-22T10:00:00Z","sentAt":"2026-09-24T15:00:00Z","emailsSent":48250,"audienceId":"aud-enterprise","audienceName":"Enterprise Operators","openRate":41.2,"clickRate":7.4,"subscriberClicks":2850,"uniqueOpens":19879},
+    {"id":"camp-2","webId":102,"type":"regular","status":"sent","title":"Founder Weekly: Metrics That Matter","subjectLine":"The metrics YC CEOs track every week","createdAt":"2026-09-17T10:00:00Z","sentAt":"2026-09-19T15:00:00Z","emailsSent":31600,"audienceId":"aud-founders","audienceName":"Founder Newsletter","openRate":33.8,"clickRate":4.9,"subscriberClicks":1548,"uniqueOpens":10681},
+    {"id":"camp-3","webId":103,"type":"regular","status":"sent","title":"Lifecycle Re-activation Sprint","subjectLine":"Your operating dashboard is waiting","createdAt":"2026-09-10T10:00:00Z","sentAt":"2026-09-12T15:00:00Z","emailsSent":18400,"audienceId":"aud-customers","audienceName":"Customer Lifecycle","openRate":17.4,"clickRate":1.6,"subscriberClicks":294,"uniqueOpens":3202},
+    {"id":"camp-4","webId":104,"type":"regular","status":"save","title":"Q4 Board Memo Templates","subjectLine":"Board-ready templates for Q4","createdAt":"2026-09-29T10:00:00Z","sentAt":null,"emailsSent":0,"audienceId":"aud-enterprise","audienceName":"Enterprise Operators","openRate":0,"clickRate":0,"subscriberClicks":0,"uniqueOpens":0}
+  ]'::jsonb,
+  '[
+    {"id":"camp-1","title":"Q3 CEO Operating System Launch","type":"regular","audienceId":"aud-enterprise","audienceName":"Enterprise Operators","subjectLine":"Run your company from one intelligence layer","sentAt":"2026-09-24T15:00:00Z","emailsSent":48250,"openRate":41.2,"clickRate":7.4,"uniqueOpens":19879,"totalOpens":31480,"uniqueClicks":2850,"totalClicks":3910,"unsubscribed":38,"hardBounces":42,"softBounces":28,"syntaxErrors":2},
+    {"id":"camp-2","title":"Founder Weekly: Metrics That Matter","type":"regular","audienceId":"aud-founders","audienceName":"Founder Newsletter","subjectLine":"The metrics YC CEOs track every week","sentAt":"2026-09-19T15:00:00Z","emailsSent":31600,"openRate":33.8,"clickRate":4.9,"uniqueOpens":10681,"totalOpens":17820,"uniqueClicks":1548,"totalClicks":2260,"unsubscribed":25,"hardBounces":30,"softBounces":18,"syntaxErrors":1},
+    {"id":"camp-3","title":"Lifecycle Re-activation Sprint","type":"regular","audienceId":"aud-customers","audienceName":"Customer Lifecycle","subjectLine":"Your operating dashboard is waiting","sentAt":"2026-09-12T15:00:00Z","emailsSent":18400,"openRate":17.4,"clickRate":1.6,"uniqueOpens":3202,"totalOpens":5100,"uniqueClicks":294,"totalClicks":420,"unsubscribed":44,"hardBounces":65,"softBounces":39,"syntaxErrors":4}
+  ]'::jsonb,
+  '{"totalAudiences":3,"totalContacts":98250,"subscribedContacts":98250,"unsubscribedContacts":1870,"cleanedContacts":820,"avgOpenRate":31,"avgClickRate":5,"totalCampaigns":4,"sentCampaigns":3,"scheduledCampaigns":0,"draftCampaigns":1,"totalEmailsSent":98250,"totalOpens":33812,"totalClicks":4692,"totalUnsubscribes":107,"totalBounces":229,"audienceBreakdown":[{"name":"Enterprise Operators","count":48250},{"name":"Founder Newsletter","count":31600},{"name":"Customer Lifecycle","count":18400}],"campaignStatusBreakdown":[{"name":"sent","count":3},{"name":"save","count":1}],"campaignPerformance":[{"name":"Q3 CEO Operating System Launch","openRate":41.2,"clickRate":7.4},{"name":"Founder Weekly: Metrics That Matter","openRate":33.8,"clickRate":4.9},{"name":"Lifecycle Re-activation Sprint","openRate":17.4,"clickRate":1.6}],"topRisks":[{"id":"camp-3","title":"Lifecycle Re-activation Sprint","audienceName":"Customer Lifecycle","emailsSent":18400,"openRate":17.4,"clickRate":1.6,"unsubscribed":44,"hardBounces":65,"softBounces":39,"riskType":"Low open rate"}]}'::jsonb,
+  '{"source":"mailchimp","accountName":"TAI Chief Growth","syncedAt":"2026-09-30T18:45:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (
