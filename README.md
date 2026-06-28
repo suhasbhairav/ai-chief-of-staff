@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Slack-aware action tracking, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -14,6 +14,7 @@ Turn every department's metrics into board-ready decisions, Slack-aware action t
 <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-16a34a?style=for-the-badge" />
 <img alt="Open Source" src="https://img.shields.io/badge/completely-open%20source-0ea5e9?style=for-the-badge" />
 <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs" />
+<img alt="Clerk" src="https://img.shields.io/badge/Clerk-Authentication-6C47FF?style=for-the-badge&logo=clerk" />
 <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=for-the-badge&logo=supabase" />
 <img alt="Slack" src="https://img.shields.io/badge/Slack-live%20integration-4A154B?style=for-the-badge&logo=slack" />
 <img alt="Notion" src="https://img.shields.io/badge/Notion-OKRs-black?style=for-the-badge&logo=notion" />
@@ -86,6 +87,17 @@ The product is designed around a simple idea: every important department should 
       <p>Flexible department snapshots are stored as JSONB, so changing columns does not require schema churn.</p>
       <p><strong>Output:</strong> scalable operating data.</p>
     </td>
+    <td width="33%" valign="top" bgcolor="#E9D5FF">
+      <h3>Clerk Authentication</h3>
+      <p>
+        <img src="https://img.shields.io/badge/Clerk-6C47FF?style=flat-square&logo=clerk" />
+        <img src="https://img.shields.io/badge/Protected%20routes-7C3AED?style=flat-square" />
+      </p>
+      <p>App-wide Clerk auth protects routes, provides sign-in/sign-up pages, and exposes account controls directly in the navbar.</p>
+      <p><strong>Output:</strong> production-ready user access.</p>
+    </td>
+  </tr>
+  <tr>
     <td width="33%" valign="top" bgcolor="#FBCFE8">
       <h3>Live Slack Workspace</h3>
       <p>
@@ -195,6 +207,7 @@ The product is designed around a simple idea: every important department should 
 | --- | --- | --- |
 | Executive dashboard | Summarizes all departments into CEO scorecards | Supabase JSONB |
 | Department dashboards | Calculates KPI cards and charts from uploaded CSVs | Browser CSV parser + Supabase |
+| Authentication | Protects app routes and exposes sign-in/sign-out controls | Clerk |
 | AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
 | CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
 | Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
@@ -244,6 +257,9 @@ ai-chief-of-staff/
   frontend/
     app/
       page.js                              # Home command center
+      layout.js                            # ClerkProvider, navbar, sign-in/out controls
+      sign-in/[[...sign-in...]]/page.js    # Clerk sign-in route
+      sign-up/[[...sign-in...]]/page.js    # Clerk sign-up route
       departments/[slug]/page.js           # Department + executive dashboards
       slack/page.js                        # Live Slack workspace UI
       todo/page.js                         # Master To-Do command center
@@ -271,6 +287,7 @@ ai-chief-of-staff/
       openai/guardrails.js                 # Enterprise AI guardrails
       slack/server.js                      # Slack OAuth/API helpers
       supabase/server.js                   # Server-side Supabase client
+    proxy.ts                               # Clerk route protection middleware
 
   supabase/
     schema.sql                             # Table creation SQL
@@ -341,6 +358,25 @@ Primary tables:
 
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
+
+---
+
+## Clerk Authentication
+
+AICoS uses Clerk for application authentication.
+
+- `ClerkProvider` wraps the app in [frontend/app/layout.js](frontend/app/layout.js).
+- Navbar auth controls show `Sign In` and `Sign Up` for signed-out users.
+- Signed-in users see the Clerk account button and a `Sign Out` button in the navbar.
+- [frontend/proxy.ts](frontend/proxy.ts) protects every app/API route except `/sign-in` and `/sign-up`.
+- Clerk pages live at `/sign-in` and `/sign-up`.
+
+Required Clerk environment variables:
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
+```
 
 ---
 
@@ -550,6 +586,8 @@ CLICKUP_API_TOKEN=your_clickup_personal_token_optional
 CLICKUP_WORKSPACE_ID=your_clickup_workspace_id_optional
 CLICKUP_CLIENT_ID=your_clickup_oauth_client_id_optional
 CLICKUP_CLIENT_SECRET=your_clickup_oauth_client_secret_optional
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -676,6 +714,8 @@ The Executive page also includes a metrics glossary so operators can understand 
 /pipeline                        HubSpot CEO deal pipeline
 /tickets                         Linear CEO ticket overview
 /clickup                         ClickUp CEO OKR/task/roadmap overview
+/sign-in                         Clerk sign-in
+/sign-up                         Clerk sign-up
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
@@ -698,7 +738,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 
 ## Roadmap
 
-- User authentication and role-based access control
+- Role-based access control and organization-level permissions
 - Department schema validation
 - Automated anomaly detection before OpenAI synthesis
 - Slack/email action routing to department owners
