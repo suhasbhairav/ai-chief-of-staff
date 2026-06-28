@@ -10,6 +10,14 @@ Open the Supabase SQL Editor and run:
 -- paste supabase/schema.sql here
 ```
 
+For a full demo workspace, run the seed file after the schema:
+
+```sql
+-- paste supabase/seed-demo.sql here
+```
+
+The seed resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, history, board memos, Slack, Notion, HubSpot, Linear, ClickUp, Jira, Confluence, and vector search rows.
+
 The schema stores each department upload in `department_snapshots` with flexible `jsonb` columns:
 
 - `records`: parsed CSV rows as JSON.

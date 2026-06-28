@@ -395,6 +395,8 @@ Primary tables:
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
+For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, board memos, historical imports, and vector search.
+
 ---
 
 ## Clerk Authentication

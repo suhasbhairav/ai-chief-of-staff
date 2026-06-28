@@ -1,7 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, ScatterChart, Scatter } from 'recharts';
 import { generateBoardMemoPdf, generateDashboardPdfReport } from '@/lib/pdf-report';
 
 // Data maps matching schema structural frameworks for all 13 departments
@@ -568,6 +568,178 @@ const getNumericHeaders = (snapshot) => {
   return snapshot.headers.filter((header) => snapshot.records.some((record) => toNumber(record[header]) !== null));
 };
 
+const parseDateValue = (value) => {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+
+  const quarterMatch = text.match(/^(\d{4})[-\s]?Q([1-4])$/i);
+  if (quarterMatch) {
+    const month = (Number(quarterMatch[2]) - 1) * 3;
+    return new Date(Number(quarterMatch[1]), month, 1);
+  }
+
+  const monthMatch = text.match(/^(\d{4})-(\d{1,2})$/);
+  if (monthMatch) {
+    return new Date(Number(monthMatch[1]), Number(monthMatch[2]) - 1, 1);
+  }
+
+  const yearMatch = text.match(/^\d{4}$/);
+  if (yearMatch) return new Date(Number(text), 0, 1);
+
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isDateHeader = (header, rows) =>
+  /date|month|quarter|period|week|year|uploaded|created|updated/i.test(header) ||
+  rows.some((row) => parseDateValue(row[header]));
+
+const getChartSourceRows = ({ isExecutiveDashboard, departmentUpload, storedDepartmentRows }) => {
+  if (!isExecutiveDashboard) return departmentUpload?.records || [];
+
+  return storedDepartmentRows.flatMap((department) =>
+    (department.records || []).map((record, index) => ({
+      Department: department.departmentId,
+      Department_Name: department.departmentName,
+      Uploaded_At: department.uploadedAt,
+      Row: index + 1,
+      ...record,
+    }))
+  );
+};
+
+const getChartSourceHeaders = ({ isExecutiveDashboard, departmentUpload, chartSourceRows }) => {
+  if (!isExecutiveDashboard) return departmentUpload?.headers || [];
+  const headers = new Set(["Department", "Department_Name", "Uploaded_At", "Row"]);
+  chartSourceRows.forEach((row) => Object.keys(row).forEach((key) => headers.add(key)));
+  return Array.from(headers);
+};
+
+const buildAdvancedChartOptions = (rows, headers) => {
+  const numericHeaders = headers.filter((header) =>
+    rows.some((row) => toNumber(row[header]) !== null)
+  );
+  const dateHeaders = headers.filter((header) => isDateHeader(header, rows));
+  const dimensionHeaders = headers.filter((header) =>
+    header &&
+    (dateHeaders.includes(header) ||
+      !numericHeaders.includes(header) ||
+      rows.some((row) => row[header] !== null && row[header] !== undefined && row[header] !== ""))
+  );
+
+  return { numericHeaders, dateHeaders, dimensionHeaders };
+};
+
+const formatDateInputValue = (date) => {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDateBounds = (rows, dateColumn) => {
+  if (!dateColumn) return { min: "", max: "" };
+  const dates = rows
+    .map((row) => parseDateValue(row[dateColumn]))
+    .filter(Boolean)
+    .sort((a, b) => a.getTime() - b.getTime());
+  return {
+    min: formatDateInputValue(dates[0]),
+    max: formatDateInputValue(dates[dates.length - 1]),
+  };
+};
+
+const buildAdvancedChartPanel = ({ rows, config }) => {
+  const {
+    xColumn,
+    yColumn,
+    dateColumn,
+    startDate,
+    endDate,
+    chartType,
+    aggregation,
+  } = config;
+
+  if (!rows.length || !xColumn || !yColumn) {
+    return {
+      title: "Advanced Chart Builder",
+      type: chartType,
+      series: [{ key: "value", name: yColumn || "Value" }],
+      data: [],
+      missingColumns: [],
+      xMode: "category",
+    };
+  }
+
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+  if (end) end.setHours(23, 59, 59, 999);
+
+  const filteredRows = rows.filter((row) => {
+    if (!dateColumn || (!start && !end)) return true;
+    const date = parseDateValue(row[dateColumn]);
+    if (!date) return false;
+    if (start && date < start) return false;
+    if (end && date > end) return false;
+    return true;
+  });
+
+  const xIsNumeric = filteredRows.some((row) => toNumber(row[xColumn]) !== null);
+
+  if (chartType === "scatter" && xIsNumeric) {
+    return {
+      title: `${yColumn} vs ${xColumn}`,
+      type: "scatter",
+      series: [{ key: "value", name: yColumn }],
+      data: filteredRows
+        .map((row, index) => ({
+          period: getPeriodLabel(row, index, Object.keys(row)),
+          x: toNumber(row[xColumn]),
+          value: toNumber(row[yColumn]),
+        }))
+        .filter((point) => point.x !== null && point.value !== null)
+        .slice(0, 250),
+      missingColumns: [],
+      xMode: "number",
+      xLabel: xColumn,
+    };
+  }
+
+  const groups = new Map();
+  filteredRows.forEach((row, index) => {
+    const rawLabel = row[xColumn] ?? getPeriodLabel(row, index, Object.keys(row));
+    const labelDate = parseDateValue(rawLabel);
+    const label = labelDate && isDateHeader(xColumn, filteredRows)
+      ? formatDateInputValue(labelDate)
+      : String(rawLabel || `Row ${index + 1}`).slice(0, 32);
+    const value = toNumber(row[yColumn]);
+    if (value === null) return;
+    const existing = groups.get(label) || { period: label, value: 0, count: 0 };
+    existing.value += value;
+    existing.count += 1;
+    groups.set(label, existing);
+  });
+
+  const data = Array.from(groups.values())
+    .map((point) => ({
+      ...point,
+      value: aggregation === "avg" ? point.value / point.count : point.value,
+    }))
+    .sort((a, b) => String(a.period).localeCompare(String(b.period), undefined, { numeric: true }))
+    .slice(0, 100);
+
+  return {
+    title: `${yColumn} by ${xColumn}`,
+    type: chartType === "scatter" ? "bar" : chartType,
+    series: [{ key: "value", name: `${aggregation === "avg" ? "Avg" : "Sum"} ${yColumn}` }],
+    data,
+    missingColumns: [],
+    xMode: "category",
+  };
+};
+
 const getPeriodLabel = (record, index, headers) => {
   const preferredHeader = headers.find((header) =>
     /date|month|quarter|period|stage|department|owner|name|id/i.test(header)
@@ -719,6 +891,35 @@ const renderChart = (panel) => {
     );
   }
 
+  if (panel.type === "scatter") {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart data={panel.data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1f1f23" vertical={false} />
+          <XAxis
+            dataKey="x"
+            name={panel.xLabel || "X"}
+            type="number"
+            stroke="#52525b"
+            fontSize={11}
+            tickLine={false}
+          />
+          <YAxis
+            dataKey="value"
+            name={panel.series[0]?.name || "Value"}
+            type="number"
+            stroke="#52525b"
+            fontSize={11}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px', fontSize: '12px' }} />
+          <Scatter dataKey="value" fill={SERIES_COLORS[0]} name={panel.series[0]?.name || "Value"} />
+        </ScatterChart>
+      </ResponsiveContainer>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={panel.data}>
@@ -761,6 +962,15 @@ export default function DepartmentPage() {
       : "Click Fetch Suggestions to generate AI recommendations for this department."
   );
   const [loadingInsights, setLoadingInsights] = useState(false);
+  const [advancedChartConfig, setAdvancedChartConfig] = useState({
+    dateColumn: "",
+    startDate: "",
+    endDate: "",
+    xColumn: "",
+    yColumn: "",
+    chartType: "bar",
+    aggregation: "sum",
+  });
   const departmentUpload = orgDataStore[departmentId];
   const storedDepartmentRows = useMemo(
     () => Object.values(orgDataStore).sort((a, b) => a.departmentName.localeCompare(b.departmentName)),
@@ -777,6 +987,43 @@ export default function DepartmentPage() {
   const chartPanels = useMemo(
     () => isExecutiveDashboard ? buildExecutiveCharts(storedDepartmentRows) : buildDepartmentCharts(departmentId, departmentUpload),
     [departmentId, departmentUpload, isExecutiveDashboard, storedDepartmentRows]
+  );
+  const advancedChartRows = useMemo(
+    () => getChartSourceRows({ isExecutiveDashboard, departmentUpload, storedDepartmentRows }),
+    [departmentUpload, isExecutiveDashboard, storedDepartmentRows]
+  );
+  const advancedChartHeaders = useMemo(
+    () => getChartSourceHeaders({ isExecutiveDashboard, departmentUpload, chartSourceRows: advancedChartRows }),
+    [advancedChartRows, departmentUpload, isExecutiveDashboard]
+  );
+  const advancedChartOptions = useMemo(
+    () => buildAdvancedChartOptions(advancedChartRows, advancedChartHeaders),
+    [advancedChartHeaders, advancedChartRows]
+  );
+  const effectiveAdvancedChartConfig = useMemo(() => {
+    const dateColumn = advancedChartOptions.dateHeaders.includes(advancedChartConfig.dateColumn)
+      ? advancedChartConfig.dateColumn
+      : advancedChartOptions.dateHeaders[0] || "";
+    const xColumn = advancedChartOptions.dimensionHeaders.includes(advancedChartConfig.xColumn)
+      ? advancedChartConfig.xColumn
+      : dateColumn || advancedChartOptions.dimensionHeaders[0] || "";
+    const yColumn = advancedChartOptions.numericHeaders.includes(advancedChartConfig.yColumn)
+      ? advancedChartConfig.yColumn
+      : advancedChartOptions.numericHeaders[0] || "";
+    const bounds = getDateBounds(advancedChartRows, dateColumn);
+
+    return {
+      ...advancedChartConfig,
+      dateColumn,
+      xColumn,
+      yColumn,
+      startDate: advancedChartConfig.startDate || bounds.min,
+      endDate: advancedChartConfig.endDate || bounds.max,
+    };
+  }, [advancedChartConfig, advancedChartOptions, advancedChartRows]);
+  const advancedChartPanel = useMemo(
+    () => buildAdvancedChartPanel({ rows: advancedChartRows, config: effectiveAdvancedChartConfig }),
+    [effectiveAdvancedChartConfig, advancedChartRows]
   );
   const metricGlossary = useMemo(
     () => buildMetricGlossary(displayedMetrics, chartPanels),
@@ -1156,6 +1403,146 @@ export default function DepartmentPage() {
           )}
         </div>
       )}
+
+      <div className="rounded-xl border border-indigo-500/20 bg-gradient-to-b from-indigo-500/10 to-[#121214] p-4 sm:p-6">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-indigo-200">
+              Advanced Chart Builder
+            </h3>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-zinc-400">
+              Select a date range and compare any uploaded column against another. Executive mode combines all department datasets and adds department labels for cross-company analysis.
+            </p>
+          </div>
+          <div className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-200">
+            {advancedChartRows.length} rows available
+          </div>
+        </div>
+
+        {advancedChartRows.length && advancedChartOptions.numericHeaders.length ? (
+          <div className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Date Column</span>
+                <select
+                  value={effectiveAdvancedChartConfig.dateColumn}
+                  onChange={(e) => {
+                    const dateColumn = e.target.value;
+                    const bounds = getDateBounds(advancedChartRows, dateColumn);
+                    setAdvancedChartConfig((current) => ({
+                      ...current,
+                      dateColumn,
+                      startDate: bounds.min,
+                      endDate: bounds.max,
+                      xColumn: current.xColumn || dateColumn,
+                    }));
+                  }}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+                >
+                  <option value="">No date filter</option>
+                  {advancedChartOptions.dateHeaders.map((header) => (
+                    <option key={header} value={header}>{header}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Start Date</span>
+                <input
+                  type="date"
+                  value={effectiveAdvancedChartConfig.startDate}
+                  disabled={!effectiveAdvancedChartConfig.dateColumn}
+                  onChange={(e) => setAdvancedChartConfig((current) => ({ ...current, startDate: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500 disabled:opacity-40"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">End Date</span>
+                <input
+                  type="date"
+                  value={effectiveAdvancedChartConfig.endDate}
+                  disabled={!effectiveAdvancedChartConfig.dateColumn}
+                  onChange={(e) => setAdvancedChartConfig((current) => ({ ...current, endDate: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500 disabled:opacity-40"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Chart Type</span>
+                <select
+                  value={effectiveAdvancedChartConfig.chartType}
+                  onChange={(e) => setAdvancedChartConfig((current) => ({ ...current, chartType: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+                >
+                  <option value="bar">Bar</option>
+                  <option value="line">Line</option>
+                  <option value="area">Area</option>
+                  <option value="scatter">Scatter</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">X Column</span>
+                <select
+                  value={effectiveAdvancedChartConfig.xColumn}
+                  onChange={(e) => setAdvancedChartConfig((current) => ({ ...current, xColumn: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+                >
+                  {advancedChartOptions.dimensionHeaders.map((header) => (
+                    <option key={header} value={header}>{header}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Y Column</span>
+                <select
+                  value={effectiveAdvancedChartConfig.yColumn}
+                  onChange={(e) => setAdvancedChartConfig((current) => ({ ...current, yColumn: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+                >
+                  {advancedChartOptions.numericHeaders.map((header) => (
+                    <option key={header} value={header}>{header}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Aggregation</span>
+                <select
+                  value={effectiveAdvancedChartConfig.aggregation}
+                  onChange={(e) => setAdvancedChartConfig((current) => ({ ...current, aggregation: e.target.value }))}
+                  className="h-10 w-full rounded-md border border-[#27272a] bg-[#0f0f11] px-3 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+                >
+                  <option value="sum">Sum</option>
+                  <option value="avg">Average</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="rounded-xl border border-[#27272a] bg-[#0f0f11] p-4 sm:p-5">
+              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+                  {advancedChartPanel.title}
+                </h4>
+                <span className="text-[10px] text-zinc-500">
+                  {advancedChartPanel.data.length} plotted points
+                </span>
+              </div>
+              <div className="h-72 w-full">
+                {renderChart(advancedChartPanel)}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-indigo-500/20 p-8 text-center text-xs leading-5 text-zinc-500">
+            Upload CSV data with at least one numeric column to unlock advanced date-filtered charting.
+          </div>
+        )}
+      </div>
 
       {/* Operating Charts */}
       <div className="grid gap-6 md:grid-cols-2">
