@@ -128,6 +128,7 @@ export const readOrganizationSummary = async () => {
       "clickup-workspace.json",
       "jira-workspace.json",
       "confluence-workspace.json",
+      "github-workspace.json",
       "integrations.json"
     ];
 
@@ -593,6 +594,7 @@ const DEFAULT_INTEGRATIONS = {
   clickup: { connected: false, name: "ClickUp Workspace", icon: "☑️" },
   jira: { connected: false, name: "Jira Issues", icon: "🔷" },
   confluence: { connected: false, name: "Confluence Knowledge", icon: "📘" },
+  github: { connected: false, name: "GitHub Engineering", icon: "🐙" },
 };
 
 export const readIntegrations = async () => {
@@ -1302,6 +1304,114 @@ export const writeConfluenceWorkspace = async ({ siteUrl, pages, spaces, summary
 
   if (error) {
     throw new Error(`Unable to save Confluence workspace: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// GITHUB REPOSITORY / PR / BUG STORE
+// ==========================================
+
+const DEFAULT_GITHUB_WORKSPACE_STORE = {
+  syncedAt: null,
+  owner: null,
+  repositories: [],
+  pullRequests: [],
+  issues: [],
+  summary: {
+    totalRepositories: 0,
+    openPullRequests: 0,
+    mergedPullRequests: 0,
+    draftPullRequests: 0,
+    stalePullRequests: 0,
+    openIssues: 0,
+    openBugs: 0,
+    staleIssues: 0,
+    closedIssuesLast30Days: 0,
+    prsByRepo: [],
+    issuesByRepo: [],
+    bugsByRepo: [],
+    languageBreakdown: [],
+    topRisks: [],
+  },
+};
+
+export const readGitHubWorkspace = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const githubPath = path.join(dir, "github-workspace.json");
+    if (!fs.existsSync(githubPath)) return DEFAULT_GITHUB_WORKSPACE_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(githubPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read github-workspace.json:", error);
+      return DEFAULT_GITHUB_WORKSPACE_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("github_repo_snapshots")
+    .select("owner, synced_at, repositories, pull_requests, issues, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read GitHub workspace: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_GITHUB_WORKSPACE_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    owner: data.owner,
+    repositories: data.repositories || [],
+    pullRequests: data.pull_requests || [],
+    issues: data.issues || [],
+    summary: data.summary || DEFAULT_GITHUB_WORKSPACE_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeGitHubWorkspace = async ({
+  owner,
+  repositories,
+  pullRequests,
+  issues,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    owner: owner || null,
+    repositories: Array.isArray(repositories) ? repositories : [],
+    pullRequests: Array.isArray(pullRequests) ? pullRequests : [],
+    issues: Array.isArray(issues) ? issues : [],
+    summary: summary || DEFAULT_GITHUB_WORKSPACE_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const githubPath = path.join(dir, "github-workspace.json");
+    fs.writeFileSync(githubPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("github_repo_snapshots").insert({
+    owner: store.owner,
+    synced_at: store.syncedAt,
+    repositories: store.repositories,
+    pull_requests: store.pullRequests,
+    issues: store.issues,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save GitHub workspace: ${error.message}`);
   }
 
   return store;

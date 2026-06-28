@@ -19,7 +19,8 @@ truncate table
   public.linear_ticket_snapshots,
   public.clickup_workspace_snapshots,
   public.jira_issue_snapshots,
-  public.confluence_content_snapshots
+  public.confluence_content_snapshots,
+  public.github_repo_snapshots
 restart identity cascade;
 
 create temporary table demo_department_seed (
@@ -403,7 +404,8 @@ select
       'linear', jsonb_build_object('connected', true, 'name', 'Linear Tickets', 'icon', '🎫', 'organization_id', 'demo-linear-org', 'organization_name', 'AICoS Engineering', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
       'clickup', jsonb_build_object('connected', true, 'name', 'ClickUp Workspace', 'icon', '☑️', 'workspace_id', 'demo-clickup-workspace', 'workspace_name', 'AICoS Demo Workspace', 'user_name', 'Demo CEO', 'hasToken', true),
       'jira', jsonb_build_object('connected', true, 'name', 'Jira Issues', 'icon', '🔷', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'jql', 'project in (PLAT, GTM, DATA) order by updated DESC', 'user_name', 'Demo CEO', 'hasToken', true),
-      'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true)
+      'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true),
+      'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'aicos-demo', 'repos', 'aicos-web,aicos-api,aicos-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -578,6 +580,31 @@ values (
   '[{"id":"space-1","key":"PROD","name":"Product","type":"global"},{"id":"space-2","key":"FIN","name":"Finance","type":"global"},{"id":"space-3","key":"SEC","name":"Security","type":"global"},{"id":"space-4","key":"CS","name":"Customer Success","type":"global"}]'::jsonb,
   '{"totalPages":4,"totalSpaces":4,"recentlyUpdated":2,"stalePages":1,"roadmapPages":1,"policyPages":2,"knowledgeOwners":4,"spaceBreakdown":[{"name":"PROD","count":1},{"name":"FIN","count":1},{"name":"SEC","count":1},{"name":"CS","count":1}],"ownerBreakdown":[{"name":"Product","count":1},{"name":"Finance","count":1},{"name":"IT","count":1},{"name":"Support","count":1}],"typeBreakdown":[{"name":"page","count":4}],"topPages":[]}'::jsonb,
   '{"source":"confluence","siteUrl":"https://aicos-demo.atlassian.net","syncedAt":"2026-09-30T18:30:00Z"}'::jsonb
+);
+
+insert into public.github_repo_snapshots (owner, synced_at, repositories, pull_requests, issues, summary, content)
+values (
+  'aicos-demo',
+  '2026-09-30T18:35:00Z',
+  '[
+    {"id":101,"name":"aicos-web","fullName":"aicos-demo/aicos-web","owner":"aicos-demo","private":true,"archived":false,"htmlUrl":"https://github.com/aicos-demo/aicos-web","language":"JavaScript","stargazersCount":0,"forksCount":0,"openIssuesCount":7,"defaultBranch":"main","pushedAt":"2026-09-29T16:00:00Z","updatedAt":"2026-09-29T16:00:00Z"},
+    {"id":102,"name":"aicos-api","fullName":"aicos-demo/aicos-api","owner":"aicos-demo","private":true,"archived":false,"htmlUrl":"https://github.com/aicos-demo/aicos-api","language":"Python","stargazersCount":0,"forksCount":0,"openIssuesCount":5,"defaultBranch":"main","pushedAt":"2026-09-28T12:00:00Z","updatedAt":"2026-09-28T12:00:00Z"},
+    {"id":103,"name":"aicos-agents","fullName":"aicos-demo/aicos-agents","owner":"aicos-demo","private":true,"archived":false,"htmlUrl":"https://github.com/aicos-demo/aicos-agents","language":"TypeScript","stargazersCount":0,"forksCount":0,"openIssuesCount":4,"defaultBranch":"main","pushedAt":"2026-09-27T10:00:00Z","updatedAt":"2026-09-27T10:00:00Z"}
+  ]'::jsonb,
+  '[
+    {"id":201,"number":44,"title":"Add CEO GitHub risk queue","repo":"aicos-demo/aicos-web","author":"nina","state":"open","draft":false,"merged":false,"createdAt":"2026-09-23T09:00:00Z","updatedAt":"2026-09-29T10:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-web/pull/44","comments":3,"reviewComments":8,"labels":["frontend","ceo-dashboard"],"isOpen":true,"isMerged":false,"isStale":false,"ageDays":7,"updatedDaysAgo":1},
+    {"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"aicos-demo/aicos-api","author":"owen","state":"open","draft":false,"merged":false,"createdAt":"2026-09-14T11:00:00Z","updatedAt":"2026-09-18T15:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-api/pull/57","comments":5,"reviewComments":11,"labels":["backend","risk"],"isOpen":true,"isMerged":false,"isStale":true,"ageDays":16,"updatedDaysAgo":12},
+    {"id":203,"number":31,"title":"Experiment with repo health retrieval planner","repo":"aicos-demo/aicos-agents","author":"sam","state":"open","draft":true,"merged":false,"createdAt":"2026-09-25T12:30:00Z","updatedAt":"2026-09-29T13:00:00Z","closedAt":null,"mergedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-agents/pull/31","comments":1,"reviewComments":2,"labels":["ai","draft"],"isOpen":true,"isMerged":false,"isStale":false,"ageDays":5,"updatedDaysAgo":1},
+    {"id":204,"number":28,"title":"Fix board memo export table wrapping","repo":"aicos-demo/aicos-web","author":"leah","state":"closed","draft":false,"merged":true,"createdAt":"2026-09-10T08:00:00Z","updatedAt":"2026-09-12T17:00:00Z","closedAt":"2026-09-12T17:00:00Z","mergedAt":"2026-09-12T17:00:00Z","htmlUrl":"https://github.com/aicos-demo/aicos-web/pull/28","comments":2,"reviewComments":4,"labels":["reports"],"isOpen":false,"isMerged":true,"isStale":false,"ageDays":20,"updatedDaysAgo":18}
+  ]'::jsonb,
+  '[
+    {"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"aicos-demo/aicos-agents","author":"maya","state":"open","createdAt":"2026-09-09T09:00:00Z","updatedAt":"2026-09-17T10:00:00Z","closedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-agents/issues/88","labels":["bug","p1","assistant"],"assignees":["sam"],"milestone":"Q4 CEO readiness","comments":6,"isBug":true,"isOpen":true,"isStale":true,"ageDays":21,"updatedDaysAgo":13},
+    {"id":302,"number":92,"title":"CSV upload accepts duplicate quarter headers","repo":"aicos-demo/aicos-web","author":"ava","state":"open","createdAt":"2026-09-21T14:00:00Z","updatedAt":"2026-09-28T09:00:00Z","closedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/92","labels":["bug","data-quality"],"assignees":["nina"],"milestone":"Q4 CEO readiness","comments":3,"isBug":true,"isOpen":true,"isStale":false,"ageDays":9,"updatedDaysAgo":2},
+    {"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"aicos-demo/aicos-web","author":"priya","state":"open","createdAt":"2026-09-12T08:00:00Z","updatedAt":"2026-09-13T08:30:00Z","closedAt":null,"htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/61","labels":["enhancement","dashboard"],"assignees":["leah"],"milestone":"Q4 CEO readiness","comments":2,"isBug":false,"isOpen":true,"isStale":true,"ageDays":18,"updatedDaysAgo":17},
+    {"id":304,"number":49,"title":"API timeout on large Jira import","repo":"aicos-demo/aicos-api","author":"owen","state":"closed","createdAt":"2026-09-02T10:00:00Z","updatedAt":"2026-09-20T16:00:00Z","closedAt":"2026-09-20T16:00:00Z","htmlUrl":"https://github.com/aicos-demo/aicos-api/issues/49","labels":["bug","performance"],"assignees":["owen"],"milestone":"Q3 hardening","comments":7,"isBug":true,"isOpen":false,"isStale":false,"ageDays":28,"updatedDaysAgo":10}
+  ]'::jsonb,
+  '{"totalRepositories":3,"openPullRequests":3,"mergedPullRequests":1,"draftPullRequests":1,"stalePullRequests":1,"openIssues":3,"openBugs":2,"staleIssues":2,"closedIssuesLast30Days":1,"prsByRepo":[{"name":"aicos-demo/aicos-web","count":1},{"name":"aicos-demo/aicos-api","count":1},{"name":"aicos-demo/aicos-agents","count":1}],"issuesByRepo":[{"name":"aicos-demo/aicos-web","count":2},{"name":"aicos-demo/aicos-agents","count":1}],"bugsByRepo":[{"name":"aicos-demo/aicos-agents","count":1},{"name":"aicos-demo/aicos-web","count":1}],"languageBreakdown":[{"name":"JavaScript","count":1},{"name":"Python","count":1},{"name":"TypeScript","count":1}],"topRisks":[{"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"aicos-demo/aicos-agents","htmlUrl":"https://github.com/aicos-demo/aicos-agents/issues/88","riskType":"Open bug","isBug":true,"ageDays":21},{"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"aicos-demo/aicos-api","htmlUrl":"https://github.com/aicos-demo/aicos-api/pull/57","riskType":"Stale PR","ageDays":16},{"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"aicos-demo/aicos-web","htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/61","riskType":"Stale issue","ageDays":18}]}'::jsonb,
+  '{"source":"github","owner":"aicos-demo","syncedAt":"2026-09-30T18:35:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (

@@ -118,6 +118,12 @@ export default function RootLayout({ children }) {
                       icon: "📘",
                     },
                     {
+                      id: "github",
+                      name: "GitHub PRs & Bugs",
+                      href: "/github",
+                      icon: "🐙",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",

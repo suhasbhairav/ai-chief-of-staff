@@ -29,6 +29,10 @@ function IntegrationsPageContent() {
   const [confluenceApiToken, setConfluenceApiToken] = useState("");
   const [confluenceCql, setConfluenceCql] = useState("type=page order by lastmodified desc");
   const [showConfluenceForm, setShowConfluenceForm] = useState(false);
+  const [githubToken, setGithubToken] = useState("");
+  const [githubOwner, setGithubOwner] = useState("");
+  const [githubRepos, setGithubRepos] = useState("");
+  const [showGithubForm, setShowGithubForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -373,6 +377,48 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleGitHubSubmit = async (e) => {
+    e.preventDefault();
+    if (!githubToken.trim()) {
+      setApiError("GitHub token is required.");
+      return;
+    }
+
+    setConnectingId("github");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          github: {
+            access_token: githubToken.trim(),
+            owner: githubOwner.trim(),
+            repos: githubRepos.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify GitHub connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("GitHub engineering workspace connected successfully.");
+      setGithubToken("");
+      setGithubOwner("");
+      setGithubRepos("");
+      setShowGithubForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect GitHub");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -408,12 +454,12 @@ function IntegrationsPageContent() {
 
   const integrationDetails = {
     slack: {
-      description: "Install the real Slack app. Aegis reads approved channels and DMs, harvests commitments, ranks P0/P1 work, and replies in Slack through Slack Web API and Events API.",
+      description: "Install the real Slack app. AICoS reads approved channels and DMs, harvests commitments, ranks P0/P1 work, and replies in Slack through Slack Web API and Events API.",
       color: "from-[#4a154b]/30 to-[#121214]",
       iconBg: "bg-[#4a154b]/20 text-[#e01e5a]",
     },
     gmail: {
-      description: "Seamlessly parse inbound emails and calendars. Aegis monitors deadlines, drafts context-aware replies for review, and identifies commitments from meetings.",
+      description: "Seamlessly parse inbound emails and calendars. AICoS monitors deadlines, drafts context-aware replies for review, and identifies commitments from meetings.",
       color: "from-red-500/10 to-[#121214]",
       iconBg: "bg-red-500/10 text-red-400",
     },
@@ -446,6 +492,11 @@ function IntegrationsPageContent() {
       description: "Sync Confluence pages, spaces, roadmaps, policies, runbooks, owners, freshness, and executive knowledge coverage.",
       color: "from-cyan-500/15 to-[#121214]",
       iconBg: "bg-cyan-500/10 text-cyan-200",
+    },
+    github: {
+      description: "Sync GitHub repositories, pull requests, issues, and bug queues for CEO-level engineering execution health.",
+      color: "from-slate-500/15 to-[#121214]",
+      iconBg: "bg-slate-500/10 text-slate-200",
     }
   };
 
@@ -456,7 +507,7 @@ function IntegrationsPageContent() {
       <div className="border-b border-[#27272a] pb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Tool Integrations Hub</h1>
         <p className="mt-2 text-sm text-zinc-400 max-w-3xl">
-          Connect your organization&apos;s primary data sources. Aegis syncs conversations, mail threads, and calendars into a consolidated company brain to determine your highest-leverage move.
+          Connect your organization&apos;s primary data sources. AICoS syncs conversations, mail threads, tickets, repositories, docs, and deal data into a consolidated company brain.
         </p>
       </div>
 
@@ -491,6 +542,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with Jira Cloud and validating issue access..."
                 : connectingId === "confluence"
                   ? "Connecting with Confluence Cloud and validating content access..."
+                : connectingId === "github"
+                  ? "Connecting with GitHub REST API and validating repository access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -868,6 +921,39 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showGithubForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect GitHub Engineering</h3>
+              <button onClick={() => setShowGithubForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-slate-500/20 bg-slate-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-slate-200">GitHub setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a fine-grained GitHub personal access token or GitHub App token.</li>
+                <li>Grant read access for repository metadata, issues, and pull requests.</li>
+                <li>Owner is optional. Use it for an organization or user such as <code className="text-slate-200">acme-inc</code>.</li>
+                <li>Repos is optional. Use comma-separated names like <code className="text-slate-200">web,api</code> or full names like <code className="text-slate-200">acme/web,acme/api</code>.</li>
+                <li>After connecting, open <code className="text-slate-200">/github</code> and click <strong>Sync GitHub</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleGitHubSubmit} className="space-y-4">
+              <input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)} placeholder="GitHub token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500" required />
+              <input type="text" value={githubOwner} onChange={(e) => setGithubOwner(e.target.value)} placeholder="Owner or organization, optional" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500" />
+              <input type="text" value={githubRepos} onChange={(e) => setGithubRepos(e.target.value)} placeholder="Comma-separated repos, optional" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500" />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowGithubForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-slate-600 hover:bg-slate-500 text-xs font-semibold text-white transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -884,6 +970,7 @@ function IntegrationsPageContent() {
           const isClickUp = id === "clickup";
           const isJira = id === "jira";
           const isConfluence = id === "confluence";
+          const isGitHub = id === "github";
 
           return (
             <div
@@ -962,6 +1049,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Site:</span> {info.site_url || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_name || info.email || "Confluence API token"}</div>
                     <div><span className="text-zinc-600 font-semibold">CQL:</span> {info.cql || "type=page order by lastmodified desc"}</div>
+                  </div>
+                )}
+
+                {info.connected && isGitHub && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_name || info.user_login || "GitHub token"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Owner:</span> {info.owner || "All authorized repos"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Repos:</span> {info.repos || "Auto-discover"}</div>
                   </div>
                 )}
               </div>
@@ -1050,6 +1145,13 @@ function IntegrationsPageContent() {
                     className="flex w-full items-center justify-center rounded-lg bg-cyan-600 hover:bg-cyan-500 py-2.5 text-xs font-semibold text-white transition-colors"
                   >
                     Connect Confluence
+                  </button>
+                ) : isGitHub ? (
+                  <button
+                    onClick={() => setShowGithubForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-slate-600 hover:bg-slate-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect GitHub
                   </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">

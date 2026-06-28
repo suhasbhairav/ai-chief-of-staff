@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -23,6 +23,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="ClickUp" src="https://img.shields.io/badge/ClickUp-OKRs%20Tasks%20Roadmaps-7B68EE?style=for-the-badge&logo=clickup" />
 <img alt="Jira" src="https://img.shields.io/badge/Jira-Issue%20Execution-0052CC?style=for-the-badge&logo=jira" />
 <img alt="Confluence" src="https://img.shields.io/badge/Confluence-Knowledge%20Base-172B4D?style=for-the-badge&logo=confluence" />
+<img alt="GitHub" src="https://img.shields.io/badge/GitHub-PRs%20Bugs%20Repos-181717?style=for-the-badge&logo=github" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -238,6 +239,7 @@ The product is designed around a simple idea: every important department should 
 | ClickUp Execution | Tracks ClickUp Goals, tasks, roadmap initiatives, views, owners, and risk | ClickUp API + Supabase |
 | Jira Delivery | Tracks Jira projects, issues, priorities, owners, overdue work, stale work, and roadmap items | Jira Cloud REST API + Supabase |
 | Confluence Knowledge | Tracks Confluence spaces, pages, roadmaps, policies, owners, and content freshness | Confluence Cloud REST API + Supabase |
+| GitHub Engineering | Tracks repositories, pull requests, issues, bug queues, stale work, and engineering risk | GitHub REST API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -294,6 +296,7 @@ ai-chief-of-staff/
       clickup/page.js                      # ClickUp OKR/task/roadmap overview
       jira/page.js                         # Jira CEO issue/project overview
       confluence/page.js                   # Confluence CEO knowledge overview
+      github/page.js                       # GitHub CEO PR/bug/repository overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
@@ -304,6 +307,7 @@ ai-chief-of-staff/
         clickup/overview/route.js          # ClickUp Goals, tasks, views sync and store
         jira/overview/route.js             # Jira issue/project sync and store
         confluence/overview/route.js       # Confluence page/space sync and store
+        github/overview/route.js           # GitHub repository/PR/issue sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -351,8 +355,10 @@ flowchart LR
   P --> G
   Q[Jira Cloud API] --> R[Jira Issue Snapshot]
   S[Confluence Cloud API] --> T[Confluence Content Snapshot]
+  U[GitHub REST API] --> V[GitHub Repo Snapshot]
   R --> G
   T --> G
+  V --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -368,6 +374,7 @@ flowchart LR
 11. ClickUp sync stores Goals, tasks, views, roadmap items, and risk summaries for CEO review.
 12. Jira sync stores issues, projects, delivery risks, and owner pressure for CEO review.
 13. Confluence sync stores knowledge pages, spaces, freshness, and roadmap/policy coverage for CEO review.
+14. GitHub sync stores repositories, PRs, issues, bugs, stale engineering work, and repo health for CEO review.
 
 ---
 
@@ -388,6 +395,7 @@ Primary tables:
 | `clickup_workspace_snapshots` | Synced ClickUp Goals, tasks, roadmap items, views, and summaries |
 | `jira_issue_snapshots` | Synced Jira issues, projects, delivery risks, and summaries |
 | `confluence_content_snapshots` | Synced Confluence pages, spaces, content freshness, and summaries |
+| `github_repo_snapshots` | Synced GitHub repositories, pull requests, issues, bugs, and summaries |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -395,7 +403,7 @@ Primary tables:
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
-For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, board memos, historical imports, and vector search.
+For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, board memos, historical imports, and vector search.
 
 ---
 
@@ -614,6 +622,27 @@ The Confluence overview stores syncs in `confluence_content_snapshots` and track
 
 ---
 
+## GitHub Engineering
+
+This is a real GitHub REST API integration for teams that want CEO visibility into engineering flow.
+
+1. Create a fine-grained personal access token or GitHub App token.
+2. Grant read access for repository metadata, pull requests, and issues.
+3. Add env vars in Vercel, or connect GitHub manually from `/integrations`.
+4. Optional: set `GITHUB_OWNER` to a user or organization.
+5. Optional: set `GITHUB_REPOS` to comma-separated repo names or full names.
+6. Open `/github` and click `Sync GitHub`.
+
+```bash
+GITHUB_TOKEN=your_github_token
+GITHUB_OWNER=your_org_or_user_optional
+GITHUB_REPOS=repo_one,repo_two_optional
+```
+
+The GitHub overview stores syncs in `github_repo_snapshots` and tracks repository coverage, open PRs, draft PRs, stale PRs, open bugs, stale issues, repo concentration, language mix, review queue, bug queue, and CEO engineering risk queue.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -673,6 +702,9 @@ ATLASSIAN_EMAIL=you@company.com
 ATLASSIAN_API_TOKEN=your_atlassian_api_token
 JIRA_JQL=order by updated DESC
 CONFLUENCE_CQL=type=page order by lastmodified desc
+GITHUB_TOKEN=your_github_token
+GITHUB_OWNER=your_org_or_user_optional
+GITHUB_REPOS=repo_one,repo_two_optional
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
@@ -784,8 +816,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 13. Open `/clickup` to sync and inspect ClickUp OKRs, tasks, and roadmap risks.
 14. Open `/jira` to sync and inspect Jira delivery risks.
 15. Open `/confluence` to sync and inspect Confluence knowledge health.
-16. Export a PDF report or board memo.
-17. Use `/todo` and `/slack` to track commitments and follow-ups.
+16. Open `/github` to sync and inspect GitHub PRs, bugs, stale issues, and repo health.
+17. Export a PDF report or board memo.
+18. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -805,6 +838,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /clickup                         ClickUp CEO OKR/task/roadmap overview
 /jira                            Jira CEO issue/project overview
 /confluence                      Confluence CEO knowledge overview
+/github                          GitHub CEO PR/bug/repository overview
 /sign-in                         Clerk sign-in
 /sign-up                         Clerk sign-up
 /api/current-data                 Supabase JSONB store
@@ -819,6 +853,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/clickup/overview            ClickUp OKR/task/roadmap sync endpoint
 /api/jira/overview               Jira issue/project sync endpoint
 /api/confluence/overview         Confluence page/space sync endpoint
+/api/github/overview             GitHub repository/PR/issue sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/slack/authorize Slack OAuth start

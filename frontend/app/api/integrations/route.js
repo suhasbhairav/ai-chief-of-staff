@@ -8,6 +8,7 @@ import {
   validateConfluenceCredentials,
   validateJiraCredentials,
 } from "@/lib/atlassian/server";
+import { validateGitHubToken } from "@/lib/github/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -117,6 +118,16 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.confluence,
+  github: integrations?.github
+    ? {
+        ...integrations.github,
+        access_token: undefined,
+        hasToken: Boolean(integrations.github.access_token || process.env.GITHUB_TOKEN),
+        owner: integrations.github.owner || process.env.GITHUB_OWNER || "",
+        repos: integrations.github.repos || process.env.GITHUB_REPOS || "",
+        connected: Boolean(integrations.github.connected || process.env.GITHUB_TOKEN),
+      }
+    : integrations?.github,
 });
 
 export async function GET() {
@@ -140,6 +151,7 @@ export async function GET() {
           (process.env.CONFLUENCE_SITE_URL || process.env.ATLASSIAN_SITE_URL) &&
           (process.env.CONFLUENCE_EMAIL || process.env.ATLASSIAN_EMAIL)
       ),
+      githubEnvConfigured: Boolean(process.env.GITHUB_TOKEN),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -398,6 +410,41 @@ export async function POST(request) {
         ...current.confluence,
         ...payload.confluence,
         api_token: current.confluence.api_token,
+      };
+    }
+
+    if (payload.github?.access_token) {
+      try {
+        const account = await validateGitHubToken(payload.github.access_token.trim());
+        payload.github = {
+          connected: true,
+          name: "GitHub Engineering",
+          icon: "🐙",
+          access_token: payload.github.access_token.trim(),
+          owner: payload.github.owner?.trim() || "",
+          repos: payload.github.repos?.trim() || "",
+          user_login: account.login,
+          user_name: account.name,
+          user_url: account.htmlUrl,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `GitHub validation failed: ${error.message}. Use a GitHub token with repository metadata, issues, and pull request read permissions.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.github && payload.github.connected === false) {
+      payload.github = {
+        connected: false,
+        name: "GitHub Engineering",
+        icon: "🐙",
+      };
+    } else if (payload.github && !payload.github.access_token && current.github?.access_token) {
+      payload.github = {
+        ...current.github,
+        ...payload.github,
+        access_token: current.github.access_token,
       };
     }
     
