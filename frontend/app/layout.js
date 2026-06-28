@@ -142,6 +142,12 @@ export default function RootLayout({ children }) {
                       icon: "📗",
                     },
                     {
+                      id: "salesforce",
+                      name: "Salesforce CRM",
+                      href: "/salesforce",
+                      icon: "☁️",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",

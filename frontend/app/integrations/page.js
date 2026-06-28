@@ -47,6 +47,10 @@ function IntegrationsPageContent() {
   const [quickbooksRealmId, setQuickbooksRealmId] = useState("");
   const [quickbooksEnvironment, setQuickbooksEnvironment] = useState("sandbox");
   const [showQuickbooksForm, setShowQuickbooksForm] = useState(false);
+  const [salesforceInstanceUrl, setSalesforceInstanceUrl] = useState("");
+  const [salesforceAccessToken, setSalesforceAccessToken] = useState("");
+  const [salesforceApiVersion, setSalesforceApiVersion] = useState("v61.0");
+  const [showSalesforceForm, setShowSalesforceForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -572,6 +576,48 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleSalesforceSubmit = async (e) => {
+    e.preventDefault();
+    if (!salesforceInstanceUrl.trim() || !salesforceAccessToken.trim()) {
+      setApiError("Salesforce instance URL and access token are required.");
+      return;
+    }
+
+    setConnectingId("salesforce");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          salesforce: {
+            instance_url: salesforceInstanceUrl.trim(),
+            access_token: salesforceAccessToken.trim(),
+            api_version: salesforceApiVersion.trim() || "v61.0",
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Salesforce connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Salesforce CRM connected successfully.");
+      setSalesforceInstanceUrl("");
+      setSalesforceAccessToken("");
+      setSalesforceApiVersion("v61.0");
+      setShowSalesforceForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Salesforce");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -665,6 +711,11 @@ function IntegrationsPageContent() {
       description: "Sync QuickBooks Online chart of accounts and finance reports for cash, receivables, payables, income, expenses, and accounting risk.",
       color: "from-emerald-500/15 to-[#121214]",
       iconBg: "bg-emerald-500/10 text-emerald-200",
+    },
+    salesforce: {
+      description: "Sync Salesforce accounts, opportunities, leads, owners, stages, forecast categories, and CRM risk for CEO revenue inspection.",
+      color: "from-sky-500/15 to-[#121214]",
+      iconBg: "bg-sky-500/10 text-sky-200",
     }
   };
 
@@ -718,6 +769,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with Mailchimp Marketing API and validating account access..."
                 : connectingId === "quickbooks"
                   ? "Connecting with QuickBooks Online and validating company access..."
+                : connectingId === "salesforce"
+                  ? "Connecting with Salesforce REST API and validating CRM access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -1231,6 +1284,38 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showSalesforceForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Salesforce CRM</h3>
+              <button onClick={() => setShowSalesforceForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-sky-300">Salesforce setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create or use a Salesforce connected app with REST API access.</li>
+                <li>Paste your instance URL, for example <code className="text-sky-300">https://your-domain.my.salesforce.com</code>.</li>
+                <li>Paste an OAuth access token with access to Account, Opportunity, Lead, and Organization objects.</li>
+                <li>After connecting, open <code className="text-sky-300">/salesforce</code> and click <strong>Sync Salesforce</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleSalesforceSubmit} className="space-y-4">
+              <input type="url" value={salesforceInstanceUrl} onChange={(e) => setSalesforceInstanceUrl(e.target.value)} placeholder="https://your-domain.my.salesforce.com" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500" required />
+              <input type="password" value={salesforceAccessToken} onChange={(e) => setSalesforceAccessToken(e.target.value)} placeholder="Salesforce OAuth access token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500" required />
+              <input type="text" value={salesforceApiVersion} onChange={(e) => setSalesforceApiVersion(e.target.value)} placeholder="v61.0" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500" />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowSalesforceForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -1251,6 +1336,7 @@ function IntegrationsPageContent() {
           const isAsana = id === "asana";
           const isMailchimp = id === "mailchimp";
           const isQuickBooks = id === "quickbooks";
+          const isSalesforce = id === "salesforce";
 
           return (
             <div
@@ -1361,6 +1447,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Company:</span> {info.company_name || info.realm_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">Realm ID:</span> {info.realm_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">Environment:</span> {info.environment || "sandbox"}</div>
+                  </div>
+                )}
+
+                {info.connected && isSalesforce && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Org:</span> {info.organization_name || info.organization_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Instance:</span> {info.instance_url || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">API:</span> {info.api_version || "v61.0"}</div>
                   </div>
                 )}
               </div>
@@ -1477,6 +1571,13 @@ function IntegrationsPageContent() {
                     className="flex w-full items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-500 py-2.5 text-xs font-semibold text-white transition-colors"
                   >
                     Connect QuickBooks
+                  </button>
+                ) : isSalesforce ? (
+                  <button
+                    onClick={() => setShowSalesforceForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-sky-600 hover:bg-sky-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect Salesforce
                   </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">

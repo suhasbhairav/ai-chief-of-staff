@@ -132,6 +132,7 @@ export const readOrganizationSummary = async () => {
       "asana-workspace.json",
       "mailchimp-marketing.json",
       "quickbooks-accounting.json",
+      "salesforce-crm.json",
       "integrations.json"
     ];
 
@@ -601,6 +602,7 @@ const DEFAULT_INTEGRATIONS = {
   asana: { connected: false, name: "Asana Work Management", icon: "🔴" },
   mailchimp: { connected: false, name: "Mailchimp Marketing", icon: "📬" },
   quickbooks: { connected: false, name: "QuickBooks Accounting", icon: "📗" },
+  salesforce: { connected: false, name: "Salesforce CRM", icon: "☁️" },
 };
 
 export const readIntegrations = async () => {
@@ -1759,6 +1761,128 @@ export const writeQuickBooksAccounting = async ({
 
   if (error) {
     throw new Error(`Unable to save QuickBooks accounting snapshot: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// SALESFORCE CRM / ACCOUNT / OPPORTUNITY STORE
+// ==========================================
+
+const DEFAULT_SALESFORCE_CRM_STORE = {
+  syncedAt: null,
+  instanceUrl: null,
+  organizationId: null,
+  organizationName: null,
+  accounts: [],
+  opportunities: [],
+  leads: [],
+  summary: {
+    totalAccounts: 0,
+    totalLeads: 0,
+    openLeads: 0,
+    totalOpportunities: 0,
+    openOpportunities: 0,
+    closedWonAmount: 0,
+    openPipelineAmount: 0,
+    weightedPipelineAmount: 0,
+    forecastThisQuarter: 0,
+    staleOpportunities: 0,
+    overdueCloseOpportunities: 0,
+    avgDealSize: 0,
+    winRate: null,
+    stageBreakdown: [],
+    ownerBreakdown: [],
+    leadSourceBreakdown: [],
+    topOpenOpportunities: [],
+    topRisks: [],
+  },
+};
+
+export const readSalesforceCrm = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const salesforcePath = path.join(dir, "salesforce-crm.json");
+    if (!fs.existsSync(salesforcePath)) return DEFAULT_SALESFORCE_CRM_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(salesforcePath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read salesforce-crm.json:", error);
+      return DEFAULT_SALESFORCE_CRM_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("salesforce_crm_snapshots")
+    .select("instance_url, organization_id, organization_name, synced_at, accounts, opportunities, leads, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Salesforce CRM snapshot: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_SALESFORCE_CRM_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    instanceUrl: data.instance_url,
+    organizationId: data.organization_id,
+    organizationName: data.organization_name,
+    accounts: data.accounts || [],
+    opportunities: data.opportunities || [],
+    leads: data.leads || [],
+    summary: data.summary || DEFAULT_SALESFORCE_CRM_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeSalesforceCrm = async ({
+  instanceUrl,
+  organizationId,
+  organizationName,
+  accounts,
+  opportunities,
+  leads,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    instanceUrl: instanceUrl || null,
+    organizationId: organizationId || null,
+    organizationName: organizationName || null,
+    accounts: Array.isArray(accounts) ? accounts : [],
+    opportunities: Array.isArray(opportunities) ? opportunities : [],
+    leads: Array.isArray(leads) ? leads : [],
+    summary: summary || DEFAULT_SALESFORCE_CRM_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const salesforcePath = path.join(dir, "salesforce-crm.json");
+    fs.writeFileSync(salesforcePath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("salesforce_crm_snapshots").insert({
+    instance_url: store.instanceUrl,
+    organization_id: store.organizationId,
+    organization_name: store.organizationName,
+    synced_at: store.syncedAt,
+    accounts: store.accounts,
+    opportunities: store.opportunities,
+    leads: store.leads,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Salesforce CRM snapshot: ${error.message}`);
   }
 
   return store;

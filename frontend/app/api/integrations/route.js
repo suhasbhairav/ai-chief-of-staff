@@ -12,6 +12,7 @@ import { validateGitHubToken } from "@/lib/github/server";
 import { validateAsanaToken } from "@/lib/asana/server";
 import { validateMailchimpToken } from "@/lib/mailchimp/server";
 import { validateQuickBooksCredentials } from "@/lib/quickbooks/server";
+import { validateSalesforceToken } from "@/lib/salesforce/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -173,6 +174,19 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.quickbooks,
+  salesforce: integrations?.salesforce
+    ? {
+        ...integrations.salesforce,
+        access_token: undefined,
+        hasToken: Boolean(integrations.salesforce.access_token || process.env.SALESFORCE_ACCESS_TOKEN),
+        instance_url: integrations.salesforce.instance_url || process.env.SALESFORCE_INSTANCE_URL || "",
+        api_version: integrations.salesforce.api_version || process.env.SALESFORCE_API_VERSION || "v61.0",
+        connected: Boolean(
+          integrations.salesforce.connected ||
+            (process.env.SALESFORCE_INSTANCE_URL && process.env.SALESFORCE_ACCESS_TOKEN)
+        ),
+      }
+    : integrations?.salesforce,
 });
 
 export async function GET() {
@@ -202,6 +216,9 @@ export async function GET() {
       quickbooksEnvConfigured: Boolean(
         process.env.QUICKBOOKS_REALM_ID &&
           (process.env.QUICKBOOKS_ACCESS_TOKEN || process.env.QUICKBOOKS_REFRESH_TOKEN)
+      ),
+      salesforceEnvConfigured: Boolean(
+        process.env.SALESFORCE_INSTANCE_URL && process.env.SALESFORCE_ACCESS_TOKEN
       ),
     });
   } catch (error) {
@@ -629,6 +646,44 @@ export async function POST(request) {
         access_token: current.quickbooks.access_token,
         refresh_token: current.quickbooks.refresh_token,
         client_secret: current.quickbooks.client_secret,
+      };
+    }
+
+    if (payload.salesforce?.instance_url && payload.salesforce?.access_token) {
+      try {
+        const org = await validateSalesforceToken({
+          instanceUrl: payload.salesforce.instance_url.trim(),
+          accessToken: payload.salesforce.access_token.trim(),
+          apiVersion: payload.salesforce.api_version?.trim() || "v61.0",
+        });
+        payload.salesforce = {
+          connected: true,
+          name: "Salesforce CRM",
+          icon: "☁️",
+          instance_url: payload.salesforce.instance_url.trim().replace(/\/+$/, ""),
+          access_token: payload.salesforce.access_token.trim(),
+          api_version: payload.salesforce.api_version?.trim() || "v61.0",
+          organization_id: org.organizationId,
+          organization_name: org.organizationName,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Salesforce validation failed: ${error.message}. Use a valid instance URL, OAuth access token, and API version such as v61.0.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.salesforce && payload.salesforce.connected === false) {
+      payload.salesforce = {
+        connected: false,
+        name: "Salesforce CRM",
+        icon: "☁️",
+      };
+    } else if (payload.salesforce && !payload.salesforce.access_token && current.salesforce?.access_token) {
+      payload.salesforce = {
+        ...current.salesforce,
+        ...payload.salesforce,
+        access_token: current.salesforce.access_token,
       };
     }
     

@@ -23,7 +23,8 @@ truncate table
   public.github_repo_snapshots,
   public.asana_workspace_snapshots,
   public.mailchimp_marketing_snapshots,
-  public.quickbooks_accounting_snapshots
+  public.quickbooks_accounting_snapshots,
+  public.salesforce_crm_snapshots
 restart identity cascade;
 
 create temporary table demo_department_seed (
@@ -411,7 +412,8 @@ select
       'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'tai-chief-demo', 'repos', 'tai-chief-web,tai-chief-api,tai-chief-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true),
       'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'TAI Chief Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
       'mailchimp', jsonb_build_object('connected', true, 'name', 'Mailchimp Marketing', 'icon', '📬', 'server_prefix', 'us21', 'account_id', 'demo-mailchimp-account', 'account_name', 'TAI Chief Growth', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
-      'quickbooks', jsonb_build_object('connected', true, 'name', 'QuickBooks Accounting', 'icon', '📗', 'realm_id', 'demo-qbo-company', 'company_name', 'TAI Chief Demo Co', 'environment', 'sandbox', 'hasToken', true)
+      'quickbooks', jsonb_build_object('connected', true, 'name', 'QuickBooks Accounting', 'icon', '📗', 'realm_id', 'demo-qbo-company', 'company_name', 'TAI Chief Demo Co', 'environment', 'sandbox', 'hasToken', true),
+      'salesforce', jsonb_build_object('connected', true, 'name', 'Salesforce CRM', 'icon', '☁️', 'instance_url', 'https://tai-chief-demo.my.salesforce.com', 'api_version', 'v61.0', 'organization_id', '00DDEMOCRM', 'organization_name', 'TAI Chief Revenue Cloud', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -677,6 +679,32 @@ values (
   '{"profitAndLoss":{"Header":{"ReportName":"ProfitAndLoss"},"Rows":{"Row":[{"Summary":{"ColData":[{"value":"Net Income"},{"value":"184000"}]}}]}},"balanceSheet":{"Header":{"ReportName":"BalanceSheet"},"Rows":{"Row":[]}},"cashFlow":{"Header":{"ReportName":"CashFlow"},"Rows":{"Row":[]}}}'::jsonb,
   '{"totalAccounts":8,"activeAccounts":8,"bankAccounts":1,"arBalance":552000,"apBalance":382000,"incomeBalance":884000,"expenseBalance":579000,"assetBalance":4872000,"liabilityBalance":1207000,"equityBalance":3668000,"netIncome":184000,"cashBalance":4320000,"accountTypeBreakdown":[{"name":"Expense","count":2},{"name":"Bank","count":1},{"name":"Accounts Receivable","count":1},{"name":"Accounts Payable","count":1},{"name":"Income","count":1},{"name":"Long Term Liability","count":1},{"name":"Equity","count":1}],"balanceBreakdown":[{"name":"Assets","count":4872000},{"name":"Liabilities","count":1207000},{"name":"Equity","count":3668000},{"name":"Income","count":884000},{"name":"Expenses","count":579000}],"topAccounts":[{"id":"1","name":"Checking","fullyQualifiedName":"Checking","active":true,"classification":"Asset","accountType":"Bank","accountSubType":"Checking","currentBalance":4320000,"currentBalanceWithSubAccounts":4320000,"currency":"USD"},{"id":"8","name":"Owner Equity","fullyQualifiedName":"Owner Equity","active":true,"classification":"Equity","accountType":"Equity","accountSubType":"OwnersEquity","currentBalance":3668000,"currentBalanceWithSubAccounts":3668000,"currency":"USD"},{"id":"7","name":"Long Term Debt","fullyQualifiedName":"Long Term Debt","active":true,"classification":"Liability","accountType":"Long Term Liability","accountSubType":"NotesPayable","currentBalance":825000,"currentBalanceWithSubAccounts":825000,"currency":"USD"}],"topRisks":[]}'::jsonb,
   '{"source":"quickbooks","companyName":"TAI Chief Demo Co","environment":"sandbox","syncedAt":"2026-09-30T18:50:00Z"}'::jsonb
+);
+
+insert into public.salesforce_crm_snapshots (instance_url, organization_id, organization_name, synced_at, accounts, opportunities, leads, summary, content)
+values (
+  'https://tai-chief-demo.my.salesforce.com',
+  '00DDEMOCRM',
+  'TAI Chief Revenue Cloud',
+  '2026-09-30T18:55:00Z',
+  '[
+    {"id":"001-demo-1","name":"Northstar Bank","type":"Customer - Direct","industry":"Financial Services","annualRevenue":1200000000,"employees":5200,"owner":"Ava Chen","createdAt":"2026-04-01T09:00:00Z","updatedAt":"2026-09-29T10:00:00Z"},
+    {"id":"001-demo-2","name":"Helio Health","type":"Prospect","industry":"Healthcare","annualRevenue":680000000,"employees":3100,"owner":"Marco Silva","createdAt":"2026-05-15T09:00:00Z","updatedAt":"2026-09-21T10:00:00Z"},
+    {"id":"001-demo-3","name":"Zest Foods","type":"Prospect","industry":"Consumer Goods","annualRevenue":220000000,"employees":900,"owner":"Priya Rao","createdAt":"2026-06-20T09:00:00Z","updatedAt":"2026-09-28T10:00:00Z"}
+  ]'::jsonb,
+  '[
+    {"id":"006-demo-1","name":"Northstar Bank Enterprise Expansion","accountName":"Northstar Bank","stage":"Negotiation/Review","amount":640000,"probability":80,"weightedAmount":512000,"closeDate":"2026-10-15","isClosed":false,"isWon":false,"isOpen":true,"isOverdue":false,"isStale":false,"type":"Expansion","leadSource":"Executive Referral","forecastCategory":"Commit","owner":"Ava Chen","createdAt":"2026-07-01T09:00:00Z","updatedAt":"2026-09-29T10:00:00Z","updatedDaysAgo":1},
+    {"id":"006-demo-2","name":"Helio Health Platform Deal","accountName":"Helio Health","stage":"Security Review","amount":420000,"probability":60,"weightedAmount":252000,"closeDate":"2026-09-25","isClosed":false,"isWon":false,"isOpen":true,"isOverdue":true,"isStale":true,"type":"New Business","leadSource":"Partner","forecastCategory":"Best Case","owner":"Marco Silva","createdAt":"2026-07-12T09:00:00Z","updatedAt":"2026-09-10T10:00:00Z","updatedDaysAgo":20},
+    {"id":"006-demo-3","name":"Zest Foods Multi-region Rollout","accountName":"Zest Foods","stage":"Proposal/Price Quote","amount":180000,"probability":50,"weightedAmount":90000,"closeDate":"2026-11-12","isClosed":false,"isWon":false,"isOpen":true,"isOverdue":false,"isStale":false,"type":"New Business","leadSource":"Web","forecastCategory":"Pipeline","owner":"Priya Rao","createdAt":"2026-08-05T09:00:00Z","updatedAt":"2026-09-28T10:00:00Z","updatedDaysAgo":2},
+    {"id":"006-demo-4","name":"Acme Logistics Renewal","accountName":"Acme Logistics","stage":"Closed Won","amount":220000,"probability":100,"weightedAmount":220000,"closeDate":"2026-09-20","isClosed":true,"isWon":true,"isOpen":false,"isOverdue":false,"isStale":false,"type":"Renewal","leadSource":"Customer Success","forecastCategory":"Closed","owner":"Ava Chen","createdAt":"2026-06-01T09:00:00Z","updatedAt":"2026-09-20T10:00:00Z","updatedDaysAgo":10}
+  ]'::jsonb,
+  '[
+    {"id":"00Q-demo-1","name":"Maya Patel","company":"Orion Manufacturing","status":"Open - Not Contacted","rating":"Hot","leadSource":"Webinar","annualRevenue":450000000,"employees":1700,"isConverted":false,"convertedAt":null,"isOpen":true,"isStale":true,"owner":"Priya Rao","createdAt":"2026-09-01T09:00:00Z","updatedAt":"2026-09-08T09:00:00Z","updatedDaysAgo":22},
+    {"id":"00Q-demo-2","name":"Jon Reed","company":"Summit Retail","status":"Working - Contacted","rating":"Warm","leadSource":"Paid Search","annualRevenue":120000000,"employees":540,"isConverted":false,"convertedAt":null,"isOpen":true,"isStale":false,"owner":"Marco Silva","createdAt":"2026-09-18T09:00:00Z","updatedAt":"2026-09-28T09:00:00Z","updatedDaysAgo":2},
+    {"id":"00Q-demo-3","name":"Elena Torres","company":"Northstar Bank","status":"Converted","rating":"Hot","leadSource":"Executive Referral","annualRevenue":1200000000,"employees":5200,"isConverted":true,"convertedAt":"2026-09-15","isOpen":false,"isStale":false,"owner":"Ava Chen","createdAt":"2026-08-15T09:00:00Z","updatedAt":"2026-09-15T09:00:00Z","updatedDaysAgo":15}
+  ]'::jsonb,
+  '{"totalAccounts":3,"totalLeads":3,"openLeads":2,"totalOpportunities":4,"openOpportunities":3,"closedWonAmount":220000,"openPipelineAmount":1240000,"weightedPipelineAmount":854000,"forecastThisQuarter":0,"staleOpportunities":1,"overdueCloseOpportunities":1,"avgDealSize":413333,"winRate":100,"stageBreakdown":[{"name":"Negotiation/Review","count":1},{"name":"Security Review","count":1},{"name":"Proposal/Price Quote","count":1}],"ownerBreakdown":[{"name":"Ava Chen","count":1},{"name":"Marco Silva","count":1},{"name":"Priya Rao","count":1}],"leadSourceBreakdown":[{"name":"Webinar","count":1},{"name":"Paid Search","count":1}],"topOpenOpportunities":[{"id":"006-demo-1","name":"Northstar Bank Enterprise Expansion","accountName":"Northstar Bank","stage":"Negotiation/Review","amount":640000,"probability":80,"weightedAmount":512000,"closeDate":"2026-10-15","isOpen":true,"owner":"Ava Chen"},{"id":"006-demo-2","name":"Helio Health Platform Deal","accountName":"Helio Health","stage":"Security Review","amount":420000,"probability":60,"weightedAmount":252000,"closeDate":"2026-09-25","isOpen":true,"owner":"Marco Silva"},{"id":"006-demo-3","name":"Zest Foods Multi-region Rollout","accountName":"Zest Foods","stage":"Proposal/Price Quote","amount":180000,"probability":50,"weightedAmount":90000,"closeDate":"2026-11-12","isOpen":true,"owner":"Priya Rao"}],"topRisks":[{"id":"006-demo-2","name":"Helio Health Platform Deal","riskType":"Overdue close date","amount":420000,"owner":"Marco Silva"},{"id":"00Q-demo-1","name":"Maya Patel","company":"Orion Manufacturing","riskType":"Stale lead","amount":450000000,"owner":"Priya Rao"}]}'::jsonb,
+  '{"source":"salesforce","organizationName":"TAI Chief Revenue Cloud","syncedAt":"2026-09-30T18:55:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (

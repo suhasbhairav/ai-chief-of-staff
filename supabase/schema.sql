@@ -244,6 +244,21 @@ create table if not exists public.quickbooks_accounting_snapshots (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.salesforce_crm_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  source text not null default 'salesforce',
+  instance_url text,
+  organization_id text,
+  organization_name text,
+  synced_at timestamptz not null default now(),
+  accounts jsonb not null default '[]'::jsonb,
+  opportunities jsonb not null default '[]'::jsonb,
+  leads jsonb not null default '[]'::jsonb,
+  summary jsonb not null default '{}'::jsonb,
+  content jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists department_snapshots_department_id_idx
   on public.department_snapshots (department_id);
 
@@ -341,6 +356,12 @@ create index if not exists quickbooks_accounting_snapshots_synced_at_idx
 create index if not exists quickbooks_accounting_snapshots_content_gin_idx
   on public.quickbooks_accounting_snapshots using gin (content);
 
+create index if not exists salesforce_crm_snapshots_synced_at_idx
+  on public.salesforce_crm_snapshots (synced_at desc);
+
+create index if not exists salesforce_crm_snapshots_content_gin_idx
+  on public.salesforce_crm_snapshots using gin (content);
+
 create or replace function public.match_department_embeddings(
   query_embedding vector(1536),
   match_count int default 8,
@@ -425,6 +446,7 @@ alter table public.github_repo_snapshots enable row level security;
 alter table public.asana_workspace_snapshots enable row level security;
 alter table public.mailchimp_marketing_snapshots enable row level security;
 alter table public.quickbooks_accounting_snapshots enable row level security;
+alter table public.salesforce_crm_snapshots enable row level security;
 
 grant select, insert, update, delete on public.department_snapshots to service_role;
 grant select, insert, update, delete on public.organization_summaries to service_role;
@@ -444,4 +466,5 @@ grant select, insert, update, delete on public.github_repo_snapshots to service_
 grant select, insert, update, delete on public.asana_workspace_snapshots to service_role;
 grant select, insert, update, delete on public.mailchimp_marketing_snapshots to service_role;
 grant select, insert, update, delete on public.quickbooks_accounting_snapshots to service_role;
+grant select, insert, update, delete on public.salesforce_crm_snapshots to service_role;
 grant execute on function public.match_department_embeddings(vector, int, text) to service_role;
