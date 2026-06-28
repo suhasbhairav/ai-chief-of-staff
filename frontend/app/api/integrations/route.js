@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readIntegrations, writeIntegrations } from "@/lib/current-data-store";
 import { getSlackCredentials, slackApi } from "@/lib/slack/server";
+import { validateHubSpotToken } from "@/lib/hubspot/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -30,6 +31,16 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.notion,
+  hubspot: integrations?.hubspot
+    ? {
+        ...integrations.hubspot,
+        access_token: undefined,
+        hasToken: Boolean(integrations.hubspot.access_token || process.env.HUBSPOT_ACCESS_TOKEN),
+        connected: Boolean(
+          integrations.hubspot.connected || process.env.HUBSPOT_ACCESS_TOKEN
+        ),
+      }
+    : integrations?.hubspot,
 });
 
 export async function GET() {
@@ -40,6 +51,7 @@ export async function GET() {
       integrations: sanitizeIntegrations(integrations),
       oauthSupported,
       notionEnvConfigured: Boolean(process.env.NOTION_API_KEY && process.env.NOTION_OKR_DATABASE_ID),
+      hubspotEnvConfigured: Boolean(process.env.HUBSPOT_ACCESS_TOKEN),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -107,6 +119,38 @@ export async function POST(request) {
         ...current.notion,
         ...payload.notion,
         api_key: current.notion.api_key,
+      };
+    }
+
+    if (payload.hubspot?.access_token) {
+      try {
+        const account = await validateHubSpotToken(payload.hubspot.access_token.trim());
+        payload.hubspot = {
+          connected: true,
+          name: "HubSpot Deals",
+          icon: "🧲",
+          access_token: payload.hubspot.access_token.trim(),
+          portal_id: account.portalId,
+          account_type: account.accountType,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `HubSpot validation failed: ${error.message}. Use a Private App access token with CRM object read scopes.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.hubspot && payload.hubspot.connected === false) {
+      payload.hubspot = {
+        connected: false,
+        name: "HubSpot Deals",
+        icon: "🧲",
+      };
+    } else if (payload.hubspot && !payload.hubspot.access_token && current.hubspot?.access_token) {
+      payload.hubspot = {
+        ...current.hubspot,
+        ...payload.hubspot,
+        access_token: current.hubspot.access_token,
       };
     }
     

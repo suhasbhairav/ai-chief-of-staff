@@ -17,6 +17,7 @@ Turn every department's metrics into board-ready decisions, Slack-aware action t
 <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=for-the-badge&logo=supabase" />
 <img alt="Slack" src="https://img.shields.io/badge/Slack-live%20integration-4A154B?style=for-the-badge&logo=slack" />
 <img alt="Notion" src="https://img.shields.io/badge/Notion-OKRs-black?style=for-the-badge&logo=notion" />
+<img alt="HubSpot" src="https://img.shields.io/badge/HubSpot-Deal%20Pipeline-FF7A59?style=for-the-badge&logo=hubspot" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -103,6 +104,15 @@ The product is designed around a simple idea: every important department should 
     </td>
   </tr>
   <tr>
+    <td width="33%" valign="top" bgcolor="#FFEDD5">
+      <h3>HubSpot Deal Pipeline</h3>
+      <p>
+        <img src="https://img.shields.io/badge/HubSpot-FF7A59?style=flat-square&logo=hubspot" />
+        <img src="https://img.shields.io/badge/CEO%20forecast-C2410C?style=flat-square" />
+      </p>
+      <p>Sync the full CRM deal pipeline for open pipeline, weighted forecast, stage mix, stale deals, top opportunities, and owner accountability.</p>
+      <p><strong>Output:</strong> CEO revenue pipeline command center.</p>
+    </td>
     <td width="33%" valign="top" bgcolor="#CCFBF1">
       <h3>CEO Chat Assistant</h3>
       <p>
@@ -166,6 +176,7 @@ The product is designed around a simple idea: every important department should 
 | AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
 | CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
 | Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
+| Deal Pipeline | Tracks HubSpot pipeline health for the CEO | HubSpot CRM API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -214,11 +225,13 @@ ai-chief-of-staff/
       todo/page.js                         # Master To-Do command center
       integrations/page.js                 # Slack integration hub
       assistant/page.js                    # CEO chat over Supabase vector memory
+      pipeline/page.js                     # HubSpot CEO deal pipeline
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
         embeddings/rebuild/route.js        # Backfill vector memory
         notion/okrs/route.js               # Notion OKR sync and store
+        hubspot/deals/route.js             # HubSpot deal pipeline sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -288,6 +301,7 @@ Primary tables:
 | `board_memos` | Saved board memo metadata and JSON content |
 | `department_embeddings` | pgvector chunks for CEO chat and department retrieval |
 | `notion_okr_snapshots` | Synced Notion Product OKR snapshots |
+| `hubspot_deal_snapshots` | Synced HubSpot deal pipeline snapshots |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -408,6 +422,20 @@ The parser is flexible and also recognizes common variants like `Name`, `KR`, `D
 
 ---
 
+## HubSpot Deal Pipeline
+
+This is a real HubSpot CRM integration for CEO-level deal pipeline tracking.
+
+1. Create a HubSpot Private App.
+2. Add CRM read scopes for deals, pipelines, and owners.
+3. Copy the Private App access token.
+4. Add it in Vercel env vars or connect manually from `/integrations`.
+5. Open `/pipeline` and click `Sync HubSpot Deals`.
+
+The pipeline dashboard tracks open pipeline, weighted forecast, next 90-day forecast, stale deals, open deal count, average deal size, pipeline by stage, pipeline by HubSpot pipeline, and top open deals.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -458,6 +486,7 @@ SLACK_CLIENT_SECRET=your_slack_client_secret
 SLACK_SIGNING_SECRET=your_slack_signing_secret
 NOTION_API_KEY=your_notion_internal_integration_secret
 NOTION_OKR_DATABASE_ID=your_product_okr_database_id
+HUBSPOT_ACCESS_TOKEN=your_hubspot_private_app_access_token
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -562,8 +591,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 8. Review the combined scorecards.
 9. Click `Fetch Org Suggestions`.
 10. Open `/assistant` to ask CEO-level questions grounded in Supabase vector memory.
-11. Export a PDF report or board memo.
-12. Use `/todo` and `/slack` to track commitments and follow-ups.
+11. Open `/pipeline` to sync and inspect the HubSpot deal pipeline.
+12. Export a PDF report or board memo.
+13. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -578,6 +608,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /slack                           Live Slack workspace
 /todo                            Master To-Do
 /assistant                       CEO chat over Supabase vector memory
+/pipeline                        HubSpot CEO deal pipeline
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
@@ -585,6 +616,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/ceo-chat                    Retrieval planner and CEO answer agent
 /api/embeddings/rebuild          Supabase vector memory backfill
 /api/notion/okrs                 Notion Product OKR sync endpoint
+/api/hubspot/deals               HubSpot deal pipeline sync endpoint
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint

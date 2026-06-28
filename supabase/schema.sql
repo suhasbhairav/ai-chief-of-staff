@@ -126,6 +126,19 @@ create table if not exists public.notion_okr_snapshots (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.hubspot_deal_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  source text not null default 'hubspot',
+  portal_id text,
+  synced_at timestamptz not null default now(),
+  deals jsonb not null default '[]'::jsonb,
+  pipelines jsonb not null default '[]'::jsonb,
+  owners jsonb not null default '[]'::jsonb,
+  summary jsonb not null default '{}'::jsonb,
+  content jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists department_snapshots_department_id_idx
   on public.department_snapshots (department_id);
 
@@ -168,6 +181,12 @@ create index if not exists notion_okr_snapshots_synced_at_idx
 
 create index if not exists notion_okr_snapshots_content_gin_idx
   on public.notion_okr_snapshots using gin (content);
+
+create index if not exists hubspot_deal_snapshots_synced_at_idx
+  on public.hubspot_deal_snapshots (synced_at desc);
+
+create index if not exists hubspot_deal_snapshots_content_gin_idx
+  on public.hubspot_deal_snapshots using gin (content);
 
 create or replace function public.match_department_embeddings(
   query_embedding vector(1536),
@@ -244,6 +263,7 @@ alter table public.slack_events enable row level security;
 alter table public.slack_message_snapshots enable row level security;
 alter table public.department_embeddings enable row level security;
 alter table public.notion_okr_snapshots enable row level security;
+alter table public.hubspot_deal_snapshots enable row level security;
 
 grant select, insert, update, delete on public.department_snapshots to service_role;
 grant select, insert, update, delete on public.organization_summaries to service_role;
@@ -254,4 +274,5 @@ grant select, insert, update, delete on public.slack_events to service_role;
 grant select, insert, update, delete on public.slack_message_snapshots to service_role;
 grant select, insert, update, delete on public.department_embeddings to service_role;
 grant select, insert, update, delete on public.notion_okr_snapshots to service_role;
+grant select, insert, update, delete on public.hubspot_deal_snapshots to service_role;
 grant execute on function public.match_department_embeddings(vector, int, text) to service_role;

@@ -123,6 +123,7 @@ export const readOrganizationSummary = async () => {
       "board-memos.json",
       "todo-list.json",
       "notion-okrs.json",
+      "hubspot-deals.json",
       "integrations.json"
     ];
 
@@ -583,6 +584,7 @@ const DEFAULT_INTEGRATIONS = {
   slack: { connected: false, name: "Slack", icon: "💬" },
   gmail: { connected: false, name: "Gmail & Calendar", icon: "📧" },
   notion: { connected: false, name: "Notion OKRs", icon: "📓" },
+  hubspot: { connected: false, name: "HubSpot Deals", icon: "🧲" },
 };
 
 export const readIntegrations = async () => {
@@ -789,6 +791,106 @@ export const writeNotionOkrs = async ({ databaseId, okrs, summary }) => {
 
   if (error) {
     throw new Error(`Unable to save Notion OKRs: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// HUBSPOT DEAL PIPELINE STORE
+// ==========================================
+
+const DEFAULT_HUBSPOT_DEAL_STORE = {
+  syncedAt: null,
+  portalId: null,
+  deals: [],
+  pipelines: [],
+  owners: [],
+  summary: {
+    totalDeals: 0,
+    openDeals: 0,
+    openPipelineAmount: 0,
+    weightedPipelineAmount: 0,
+    closedWonAmount: 0,
+    staleDeals: 0,
+    forecastNext90Days: 0,
+    avgDealSize: 0,
+    winRate: null,
+    stageBreakdown: [],
+    pipelineBreakdown: [],
+    topOpenDeals: [],
+  },
+};
+
+export const readHubSpotDeals = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const dealsPath = path.join(dir, "hubspot-deals.json");
+    if (!fs.existsSync(dealsPath)) return DEFAULT_HUBSPOT_DEAL_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(dealsPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read hubspot-deals.json:", error);
+      return DEFAULT_HUBSPOT_DEAL_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("hubspot_deal_snapshots")
+    .select("portal_id, synced_at, deals, pipelines, owners, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read HubSpot deals: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_HUBSPOT_DEAL_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    portalId: data.portal_id,
+    deals: data.deals || [],
+    pipelines: data.pipelines || [],
+    owners: data.owners || [],
+    summary: data.summary || DEFAULT_HUBSPOT_DEAL_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeHubSpotDeals = async ({ portalId, deals, pipelines, owners, summary }) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    portalId: portalId || null,
+    deals: Array.isArray(deals) ? deals : [],
+    pipelines: Array.isArray(pipelines) ? pipelines : [],
+    owners: Array.isArray(owners) ? owners : [],
+    summary: summary || DEFAULT_HUBSPOT_DEAL_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const dealsPath = path.join(dir, "hubspot-deals.json");
+    fs.writeFileSync(dealsPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("hubspot_deal_snapshots").insert({
+    portal_id: store.portalId,
+    synced_at: store.syncedAt,
+    deals: store.deals,
+    pipelines: store.pipelines,
+    owners: store.owners,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save HubSpot deals: ${error.message}`);
   }
 
   return store;
