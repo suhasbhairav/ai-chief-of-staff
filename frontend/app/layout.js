@@ -67,6 +67,7 @@ export default function RootLayout({ children }) {
               {[
                 { id: 'assistant', name: 'CEO Chat', href: '/assistant', icon: '✨' },
                 { id: 'pipeline', name: 'Deal Pipeline', href: '/pipeline', icon: '🧲' },
+                { id: 'tickets', name: 'Ticket Overview', href: '/tickets', icon: '🎫' },
                 { id: 'todo', name: 'Master To-Do', href: '/todo', icon: '📋' },
                 { id: 'slack', name: 'Slack Workspace', href: '/slack', icon: '💬' },
                 { id: 'integrations', name: 'Integrations Hub', href: '/integrations', icon: '🔌' },

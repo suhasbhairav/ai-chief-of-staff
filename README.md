@@ -18,6 +18,7 @@ Turn every department's metrics into board-ready decisions, Slack-aware action t
 <img alt="Slack" src="https://img.shields.io/badge/Slack-live%20integration-4A154B?style=for-the-badge&logo=slack" />
 <img alt="Notion" src="https://img.shields.io/badge/Notion-OKRs-black?style=for-the-badge&logo=notion" />
 <img alt="HubSpot" src="https://img.shields.io/badge/HubSpot-Deal%20Pipeline-FF7A59?style=for-the-badge&logo=hubspot" />
+<img alt="Linear" src="https://img.shields.io/badge/Linear-Tickets-5E6AD2?style=for-the-badge&logo=linear" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -122,6 +123,15 @@ The product is designed around a simple idea: every important department should 
       <p>Chat about any department, retrieve Supabase vector evidence, and escalate to guarded OpenAI synthesis only when the CEO asks.</p>
       <p><strong>Output:</strong> grounded operating answers.</p>
     </td>
+    <td width="33%" valign="top" bgcolor="#EDE9FE">
+      <h3>Linear Ticket Overview</h3>
+      <p>
+        <img src="https://img.shields.io/badge/Linear%20SDK-5E6AD2?style=flat-square&logo=linear" />
+        <img src="https://img.shields.io/badge/CEO%20execution-7C3AED?style=flat-square" />
+      </p>
+      <p>Sync Linear issues for open load, urgent work, overdue tickets, stale execution, team pressure, project risk, and completion throughput.</p>
+      <p><strong>Output:</strong> engineering execution command center.</p>
+    </td>
     <td width="33%" valign="top" bgcolor="#E0F2FE">
       <h3>Notion Product OKRs</h3>
       <p>
@@ -177,6 +187,7 @@ The product is designed around a simple idea: every important department should 
 | CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
 | Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
 | Deal Pipeline | Tracks HubSpot pipeline health for the CEO | HubSpot CRM API + Supabase |
+| Ticket Overview | Tracks Linear execution health for the CEO | Linear npm SDK + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -226,12 +237,14 @@ ai-chief-of-staff/
       integrations/page.js                 # Slack integration hub
       assistant/page.js                    # CEO chat over Supabase vector memory
       pipeline/page.js                     # HubSpot CEO deal pipeline
+      tickets/page.js                      # Linear CEO ticket overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
         embeddings/rebuild/route.js        # Backfill vector memory
         notion/okrs/route.js               # Notion OKR sync and store
         hubspot/deals/route.js             # HubSpot deal pipeline sync and store
+        linear/tickets/route.js            # Linear ticket sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -302,6 +315,7 @@ Primary tables:
 | `department_embeddings` | pgvector chunks for CEO chat and department retrieval |
 | `notion_okr_snapshots` | Synced Notion Product OKR snapshots |
 | `hubspot_deal_snapshots` | Synced HubSpot deal pipeline snapshots |
+| `linear_ticket_snapshots` | Synced Linear issue snapshots |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -436,6 +450,18 @@ The pipeline dashboard tracks open pipeline, weighted forecast, next 90-day fore
 
 ---
 
+## Linear Ticket Overview
+
+This is a real Linear integration using Linear&apos;s official npm SDK.
+
+1. Create a Linear personal API key from Linear account security settings.
+2. Add it in Vercel env vars or connect manually from `/integrations`.
+3. Open `/tickets` and click `Sync Linear Tickets`.
+
+The ticket overview tracks open tickets, urgent issues, overdue work, stale execution, completed issues in the last 30 days, average open age, team load, priority mix, and CEO risk queue.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -487,6 +513,7 @@ SLACK_SIGNING_SECRET=your_slack_signing_secret
 NOTION_API_KEY=your_notion_internal_integration_secret
 NOTION_OKR_DATABASE_ID=your_product_okr_database_id
 HUBSPOT_ACCESS_TOKEN=your_hubspot_private_app_access_token
+LINEAR_API_KEY=your_linear_personal_api_key
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -592,8 +619,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 9. Click `Fetch Org Suggestions`.
 10. Open `/assistant` to ask CEO-level questions grounded in Supabase vector memory.
 11. Open `/pipeline` to sync and inspect the HubSpot deal pipeline.
-12. Export a PDF report or board memo.
-13. Use `/todo` and `/slack` to track commitments and follow-ups.
+12. Open `/tickets` to sync and inspect Linear execution health.
+13. Export a PDF report or board memo.
+14. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -609,6 +637,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /todo                            Master To-Do
 /assistant                       CEO chat over Supabase vector memory
 /pipeline                        HubSpot CEO deal pipeline
+/tickets                         Linear CEO ticket overview
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
@@ -617,6 +646,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/embeddings/rebuild          Supabase vector memory backfill
 /api/notion/okrs                 Notion Product OKR sync endpoint
 /api/hubspot/deals               HubSpot deal pipeline sync endpoint
+/api/linear/tickets              Linear ticket overview sync endpoint
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint

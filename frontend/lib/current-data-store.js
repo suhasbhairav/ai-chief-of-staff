@@ -124,6 +124,7 @@ export const readOrganizationSummary = async () => {
       "todo-list.json",
       "notion-okrs.json",
       "hubspot-deals.json",
+      "linear-tickets.json",
       "integrations.json"
     ];
 
@@ -585,6 +586,7 @@ const DEFAULT_INTEGRATIONS = {
   gmail: { connected: false, name: "Gmail & Calendar", icon: "📧" },
   notion: { connected: false, name: "Notion OKRs", icon: "📓" },
   hubspot: { connected: false, name: "HubSpot Deals", icon: "🧲" },
+  linear: { connected: false, name: "Linear Tickets", icon: "🎫" },
 };
 
 export const readIntegrations = async () => {
@@ -891,6 +893,102 @@ export const writeHubSpotDeals = async ({ portalId, deals, pipelines, owners, su
 
   if (error) {
     throw new Error(`Unable to save HubSpot deals: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// LINEAR TICKET OVERVIEW STORE
+// ==========================================
+
+const DEFAULT_LINEAR_TICKET_STORE = {
+  syncedAt: null,
+  organizationId: null,
+  organizationName: null,
+  issues: [],
+  summary: {
+    totalIssues: 0,
+    openIssues: 0,
+    urgentIssues: 0,
+    overdueIssues: 0,
+    staleIssues: 0,
+    completedLast30Days: 0,
+    canceledIssues: 0,
+    avgOpenAgeDays: 0,
+    stateBreakdown: [],
+    teamBreakdown: [],
+    priorityBreakdown: [],
+    topRisks: [],
+  },
+};
+
+export const readLinearTickets = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const ticketsPath = path.join(dir, "linear-tickets.json");
+    if (!fs.existsSync(ticketsPath)) return DEFAULT_LINEAR_TICKET_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(ticketsPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read linear-tickets.json:", error);
+      return DEFAULT_LINEAR_TICKET_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("linear_ticket_snapshots")
+    .select("organization_id, organization_name, synced_at, issues, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Linear tickets: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_LINEAR_TICKET_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    organizationId: data.organization_id,
+    organizationName: data.organization_name,
+    issues: data.issues || [],
+    summary: data.summary || DEFAULT_LINEAR_TICKET_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeLinearTickets = async ({ organizationId, organizationName, issues, summary }) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    organizationId: organizationId || null,
+    organizationName: organizationName || null,
+    issues: Array.isArray(issues) ? issues : [],
+    summary: summary || DEFAULT_LINEAR_TICKET_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const ticketsPath = path.join(dir, "linear-tickets.json");
+    fs.writeFileSync(ticketsPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("linear_ticket_snapshots").insert({
+    organization_id: store.organizationId,
+    organization_name: store.organizationName,
+    synced_at: store.syncedAt,
+    issues: store.issues,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Linear tickets: ${error.message}`);
   }
 
   return store;

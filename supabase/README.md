@@ -31,6 +31,7 @@ Additional operating-system tables:
 - `department_embeddings`: pgvector chunks for department snapshots and CEO retrieval.
 - `notion_okr_snapshots`: synced Notion Product OKR snapshots for objective tracking.
 - `hubspot_deal_snapshots`: synced HubSpot deal pipeline snapshots for CEO revenue tracking.
+- `linear_ticket_snapshots`: synced Linear issue snapshots for CEO execution tracking.
 
 ## 2. Environment Variables
 
@@ -44,6 +45,7 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 NOTION_API_KEY=your-notion-internal-integration-secret
 NOTION_OKR_DATABASE_ID=your-product-okr-database-id
 HUBSPOT_ACCESS_TOKEN=your-hubspot-private-app-access-token
+LINEAR_API_KEY=your-linear-personal-api-key
 ```
 
 The app uses the Supabase key only in Next.js route handlers. Do not expose the service role key in browser code.
@@ -61,7 +63,8 @@ The default embedding model produces 1536-dimensional vectors, matching `departm
 8. CEO Chat uses `/api/ceo-chat` and `match_department_embeddings` for grounded retrieval.
 9. Product OKRs sync from Notion through `/api/notion/okrs` into `notion_okr_snapshots`.
 10. Deal pipeline syncs from HubSpot through `/api/hubspot/deals` into `hubspot_deal_snapshots`.
-11. Board memo exports save memo metadata through `/api/board-memos`.
-12. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+11. Ticket overview syncs from Linear through `/api/linear/tickets` into `linear_ticket_snapshots`.
+12. Board memo exports save memo metadata through `/api/board-memos`.
+13. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
 
 Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.

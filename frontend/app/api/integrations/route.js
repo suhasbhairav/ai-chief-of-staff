@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readIntegrations, writeIntegrations } from "@/lib/current-data-store";
 import { getSlackCredentials, slackApi } from "@/lib/slack/server";
 import { validateHubSpotToken } from "@/lib/hubspot/server";
+import { validateLinearToken } from "@/lib/linear/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -41,6 +42,16 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.hubspot,
+  linear: integrations?.linear
+    ? {
+        ...integrations.linear,
+        api_key: undefined,
+        hasToken: Boolean(integrations.linear.api_key || process.env.LINEAR_API_KEY),
+        connected: Boolean(
+          integrations.linear.connected || process.env.LINEAR_API_KEY
+        ),
+      }
+    : integrations?.linear,
 });
 
 export async function GET() {
@@ -52,6 +63,7 @@ export async function GET() {
       oauthSupported,
       notionEnvConfigured: Boolean(process.env.NOTION_API_KEY && process.env.NOTION_OKR_DATABASE_ID),
       hubspotEnvConfigured: Boolean(process.env.HUBSPOT_ACCESS_TOKEN),
+      linearEnvConfigured: Boolean(process.env.LINEAR_API_KEY),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -151,6 +163,40 @@ export async function POST(request) {
         ...current.hubspot,
         ...payload.hubspot,
         access_token: current.hubspot.access_token,
+      };
+    }
+
+    if (payload.linear?.api_key) {
+      try {
+        const account = await validateLinearToken(payload.linear.api_key.trim());
+        payload.linear = {
+          connected: true,
+          name: "Linear Tickets",
+          icon: "🎫",
+          api_key: payload.linear.api_key.trim(),
+          organization_id: account.organizationId,
+          organization_name: account.organizationName,
+          user_name: account.userName,
+          user_email: account.userEmail,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Linear validation failed: ${error.message}. Use a Linear personal API key with workspace access.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.linear && payload.linear.connected === false) {
+      payload.linear = {
+        connected: false,
+        name: "Linear Tickets",
+        icon: "🎫",
+      };
+    } else if (payload.linear && !payload.linear.api_key && current.linear?.api_key) {
+      payload.linear = {
+        ...current.linear,
+        ...payload.linear,
+        api_key: current.linear.api_key,
       };
     }
     

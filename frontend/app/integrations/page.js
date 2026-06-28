@@ -14,6 +14,8 @@ function IntegrationsPageContent() {
   const [showNotionForm, setShowNotionForm] = useState(false);
   const [hubspotAccessToken, setHubspotAccessToken] = useState("");
   const [showHubspotForm, setShowHubspotForm] = useState(false);
+  const [linearApiKey, setLinearApiKey] = useState("");
+  const [showLinearForm, setShowLinearForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -178,6 +180,45 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleLinearSubmit = async (e) => {
+    e.preventDefault();
+    if (!linearApiKey.trim()) {
+      setApiError("Linear API key is required.");
+      return;
+    }
+
+    setConnectingId("linear");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linear: {
+            api_key: linearApiKey.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Linear connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Linear ticket overview connected successfully.");
+      setLinearApiKey("");
+      setShowLinearForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Linear");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -231,6 +272,11 @@ function IntegrationsPageContent() {
       description: "Sync the entire HubSpot deal pipeline for CEO-level revenue inspection: stage mix, weighted forecast, stale deals, owners, and top open opportunities.",
       color: "from-orange-500/15 to-[#121214]",
       iconBg: "bg-orange-500/10 text-orange-300",
+    },
+    linear: {
+      description: "Sync Linear issues for a CEO-level execution view: open tickets, urgent work, overdue work, stale issues, team load, project risk, and delivery throughput.",
+      color: "from-violet-500/15 to-[#121214]",
+      iconBg: "bg-violet-500/10 text-violet-200",
     }
   };
 
@@ -268,6 +314,8 @@ function IntegrationsPageContent() {
                 ? "Connecting with Notion API and checking database access..."
                 : connectingId === "hubspot"
                   ? "Connecting with HubSpot CRM and validating deal scopes..."
+                : connectingId === "linear"
+                  ? "Connecting with Linear SDK and checking workspace access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -458,6 +506,61 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showLinearForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Linear Tickets</h3>
+              <button 
+                onClick={() => setShowLinearForm(false)}
+                className="text-zinc-500 hover:text-white text-md font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-violet-300">Linear setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a Linear personal API key from account security settings.</li>
+                <li>Paste the key below. AICoS uses Linear&apos;s official npm SDK.</li>
+                <li>After connecting, open <code className="text-violet-300">/tickets</code> and click <strong>Sync Linear Tickets</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleLinearSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Linear API Key</label>
+                <input
+                  type="password"
+                  value={linearApiKey}
+                  onChange={(e) => setLinearApiKey(e.target.value)}
+                  placeholder="lin_api_... or Linear personal API key"
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowLinearForm(false)}
+                  className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white transition-colors"
+                >
+                  Verify & Connect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -470,6 +573,7 @@ function IntegrationsPageContent() {
           const isSlack = id === "slack";
           const isNotion = id === "notion";
           const isHubSpot = id === "hubspot";
+          const isLinear = id === "linear";
 
           return (
             <div
@@ -518,6 +622,13 @@ function IntegrationsPageContent() {
                   <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
                     <div><span className="text-zinc-600 font-semibold">Portal:</span> {info.portal_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">Token:</span> {info.hasToken ? "Stored server-side" : "Connected"}</div>
+                  </div>
+                )}
+
+                {info.connected && isLinear && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Workspace:</span> {info.organization_name || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_email || info.user_name || "Linear API key"}</div>
                   </div>
                 )}
               </div>
@@ -570,6 +681,13 @@ function IntegrationsPageContent() {
                     className="flex w-full items-center justify-center rounded-lg bg-orange-600 hover:bg-orange-500 py-2.5 text-xs font-semibold text-white transition-colors"
                   >
                     Connect HubSpot Deals
+                  </button>
+                ) : isLinear ? (
+                  <button
+                    onClick={() => setShowLinearForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-violet-600 hover:bg-violet-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect Linear Tickets
                   </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">
