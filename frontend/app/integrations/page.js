@@ -19,6 +19,16 @@ function IntegrationsPageContent() {
   const [clickupToken, setClickupToken] = useState("");
   const [clickupWorkspaceId, setClickupWorkspaceId] = useState("");
   const [showClickupForm, setShowClickupForm] = useState(false);
+  const [jiraSiteUrl, setJiraSiteUrl] = useState("");
+  const [jiraEmail, setJiraEmail] = useState("");
+  const [jiraApiToken, setJiraApiToken] = useState("");
+  const [jiraJql, setJiraJql] = useState("order by updated DESC");
+  const [showJiraForm, setShowJiraForm] = useState(false);
+  const [confluenceSiteUrl, setConfluenceSiteUrl] = useState("");
+  const [confluenceEmail, setConfluenceEmail] = useState("");
+  const [confluenceApiToken, setConfluenceApiToken] = useState("");
+  const [confluenceCql, setConfluenceCql] = useState("type=page order by lastmodified desc");
+  const [showConfluenceForm, setShowConfluenceForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -275,6 +285,94 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleJiraSubmit = async (e) => {
+    e.preventDefault();
+    if (!jiraSiteUrl.trim() || !jiraEmail.trim() || !jiraApiToken.trim()) {
+      setApiError("Jira site URL, Atlassian email, and API token are required.");
+      return;
+    }
+
+    setConnectingId("jira");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jira: {
+            site_url: jiraSiteUrl.trim(),
+            email: jiraEmail.trim(),
+            api_token: jiraApiToken.trim(),
+            jql: jiraJql.trim() || "order by updated DESC",
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Jira connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Jira issue workspace connected successfully.");
+      setJiraSiteUrl("");
+      setJiraEmail("");
+      setJiraApiToken("");
+      setJiraJql("order by updated DESC");
+      setShowJiraForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Jira");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
+  const handleConfluenceSubmit = async (e) => {
+    e.preventDefault();
+    if (!confluenceSiteUrl.trim() || !confluenceEmail.trim() || !confluenceApiToken.trim()) {
+      setApiError("Confluence site URL, Atlassian email, and API token are required.");
+      return;
+    }
+
+    setConnectingId("confluence");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confluence: {
+            site_url: confluenceSiteUrl.trim(),
+            email: confluenceEmail.trim(),
+            api_token: confluenceApiToken.trim(),
+            cql: confluenceCql.trim() || "type=page order by lastmodified desc",
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Confluence connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Confluence knowledge workspace connected successfully.");
+      setConfluenceSiteUrl("");
+      setConfluenceEmail("");
+      setConfluenceApiToken("");
+      setConfluenceCql("type=page order by lastmodified desc");
+      setShowConfluenceForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Confluence");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -338,6 +436,16 @@ function IntegrationsPageContent() {
       description: "Sync ClickUp Goals, tasks, and roadmap-style initiatives for teams running OKRs and delivery in ClickUp.",
       color: "from-emerald-500/15 to-[#121214]",
       iconBg: "bg-emerald-500/10 text-emerald-200",
+    },
+    jira: {
+      description: "Sync Jira issues, projects, priorities, owners, overdue work, stale execution, roadmap epics, and CEO delivery risks.",
+      color: "from-blue-500/15 to-[#121214]",
+      iconBg: "bg-blue-500/10 text-blue-200",
+    },
+    confluence: {
+      description: "Sync Confluence pages, spaces, roadmaps, policies, runbooks, owners, freshness, and executive knowledge coverage.",
+      color: "from-cyan-500/15 to-[#121214]",
+      iconBg: "bg-cyan-500/10 text-cyan-200",
     }
   };
 
@@ -379,6 +487,10 @@ function IntegrationsPageContent() {
                   ? "Connecting with Linear SDK and checking workspace access..."
                 : connectingId === "clickup"
                   ? "Connecting with ClickUp API and checking workspace access..."
+                : connectingId === "jira"
+                  ? "Connecting with Jira Cloud and validating issue access..."
+                : connectingId === "confluence"
+                  ? "Connecting with Confluence Cloud and validating content access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -690,6 +802,72 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showJiraForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Jira Cloud</h3>
+              <button onClick={() => setShowJiraForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-blue-300">Jira setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Use your Atlassian site URL, for example <code className="text-blue-300">https://company.atlassian.net</code>.</li>
+                <li>Create an Atlassian API token from your account security settings.</li>
+                <li>Paste your account email and token below.</li>
+                <li>Optionally customize JQL. After connecting, open <code className="text-blue-300">/jira</code> and click <strong>Sync Jira</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleJiraSubmit} className="space-y-4">
+              <input type="url" value={jiraSiteUrl} onChange={(e) => setJiraSiteUrl(e.target.value)} placeholder="https://company.atlassian.net" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required />
+              <input type="email" value={jiraEmail} onChange={(e) => setJiraEmail(e.target.value)} placeholder="you@company.com" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required />
+              <input type="password" value={jiraApiToken} onChange={(e) => setJiraApiToken(e.target.value)} placeholder="Atlassian API token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required />
+              <input type="text" value={jiraJql} onChange={(e) => setJiraJql(e.target.value)} placeholder="order by updated DESC" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowJiraForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showConfluenceForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Confluence Cloud</h3>
+              <button onClick={() => setShowConfluenceForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-cyan-300">Confluence setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Use your Atlassian site URL, for example <code className="text-cyan-300">https://company.atlassian.net</code>.</li>
+                <li>Create an Atlassian API token from your account security settings.</li>
+                <li>Paste your account email and token below.</li>
+                <li>Optionally customize CQL. After connecting, open <code className="text-cyan-300">/confluence</code> and click <strong>Sync Confluence</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleConfluenceSubmit} className="space-y-4">
+              <input type="url" value={confluenceSiteUrl} onChange={(e) => setConfluenceSiteUrl(e.target.value)} placeholder="https://company.atlassian.net" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" required />
+              <input type="email" value={confluenceEmail} onChange={(e) => setConfluenceEmail(e.target.value)} placeholder="you@company.com" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" required />
+              <input type="password" value={confluenceApiToken} onChange={(e) => setConfluenceApiToken(e.target.value)} placeholder="Atlassian API token" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" required />
+              <input type="text" value={confluenceCql} onChange={(e) => setConfluenceCql(e.target.value)} placeholder="type=page order by lastmodified desc" className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowConfluenceForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold text-white transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -704,6 +882,8 @@ function IntegrationsPageContent() {
           const isHubSpot = id === "hubspot";
           const isLinear = id === "linear";
           const isClickUp = id === "clickup";
+          const isJira = id === "jira";
+          const isConfluence = id === "confluence";
 
           return (
             <div
@@ -766,6 +946,22 @@ function IntegrationsPageContent() {
                   <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
                     <div><span className="text-zinc-600 font-semibold">Workspace:</span> {info.workspace_name || info.workspace_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_name || "ClickUp token"}</div>
+                  </div>
+                )}
+
+                {info.connected && isJira && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Site:</span> {info.site_url || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_name || info.email || "Jira API token"}</div>
+                    <div><span className="text-zinc-600 font-semibold">JQL:</span> {info.jql || "order by updated DESC"}</div>
+                  </div>
+                )}
+
+                {info.connected && isConfluence && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Site:</span> {info.site_url || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">User:</span> {info.user_name || info.email || "Confluence API token"}</div>
+                    <div><span className="text-zinc-600 font-semibold">CQL:</span> {info.cql || "type=page order by lastmodified desc"}</div>
                   </div>
                 )}
               </div>
@@ -841,6 +1037,20 @@ function IntegrationsPageContent() {
                       Or paste personal token manually
                     </button>
                   </div>
+                ) : isJira ? (
+                  <button
+                    onClick={() => setShowJiraForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect Jira Issues
+                  </button>
+                ) : isConfluence ? (
+                  <button
+                    onClick={() => setShowConfluenceForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-cyan-600 hover:bg-cyan-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect Confluence
+                  </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">
                     Coming soon for non-sandbox environments.

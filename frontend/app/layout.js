@@ -106,6 +106,18 @@ export default function RootLayout({ children }) {
                       icon: "☑️",
                     },
                     {
+                      id: "jira",
+                      name: "Jira Overview",
+                      href: "/jira",
+                      icon: "🔷",
+                    },
+                    {
+                      id: "confluence",
+                      name: "Confluence Knowledge",
+                      href: "/confluence",
+                      icon: "📘",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",

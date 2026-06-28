@@ -21,6 +21,8 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="HubSpot" src="https://img.shields.io/badge/HubSpot-Deal%20Pipeline-FF7A59?style=for-the-badge&logo=hubspot" />
 <img alt="Linear" src="https://img.shields.io/badge/Linear-Tickets-5E6AD2?style=for-the-badge&logo=linear" />
 <img alt="ClickUp" src="https://img.shields.io/badge/ClickUp-OKRs%20Tasks%20Roadmaps-7B68EE?style=for-the-badge&logo=clickup" />
+<img alt="Jira" src="https://img.shields.io/badge/Jira-Issue%20Execution-0052CC?style=for-the-badge&logo=jira" />
+<img alt="Confluence" src="https://img.shields.io/badge/Confluence-Knowledge%20Base-172B4D?style=for-the-badge&logo=confluence" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -156,6 +158,26 @@ The product is designed around a simple idea: every important department should 
       <p>Sync ClickUp Goals as OKRs, workspace tasks, roadmap-style initiatives, views, owners, stale work, overdue items, and CEO risk queue.</p>
       <p><strong>Output:</strong> execution visibility for ClickUp-run teams.</p>
     </td>
+    <td width="33%" valign="top" bgcolor="#DBEAFE">
+      <h3>Jira Delivery Command</h3>
+      <p>
+        <img src="https://img.shields.io/badge/Jira-0052CC?style=flat-square&logo=jira" />
+        <img src="https://img.shields.io/badge/Issues%20Projects%20Risk-2563EB?style=flat-square" />
+      </p>
+      <p>Sync Jira issues and projects for delivery load, priority pressure, overdue work, stale execution, roadmap epics, and owner accountability.</p>
+      <p><strong>Output:</strong> CEO software delivery command center.</p>
+    </td>
+    <td width="33%" valign="top" bgcolor="#CFFAFE">
+      <h3>Confluence Knowledge OS</h3>
+      <p>
+        <img src="https://img.shields.io/badge/Confluence-172B4D?style=flat-square&logo=confluence" />
+        <img src="https://img.shields.io/badge/Knowledge%20Freshness-0891B2?style=flat-square" />
+      </p>
+      <p>Sync pages and spaces for roadmap docs, policies, runbooks, owners, stale knowledge, and source-of-truth health.</p>
+      <p><strong>Output:</strong> executive knowledge coverage map.</p>
+    </td>
+  </tr>
+  <tr>
     <td width="33%" valign="top" bgcolor="#E0F2FE">
       <h3>Notion Product OKRs</h3>
       <p>
@@ -214,6 +236,8 @@ The product is designed around a simple idea: every important department should 
 | Deal Pipeline | Tracks HubSpot pipeline health for the CEO | HubSpot CRM API + Supabase |
 | Ticket Overview | Tracks Linear execution health for the CEO | Linear npm SDK + Supabase |
 | ClickUp Execution | Tracks ClickUp Goals, tasks, roadmap initiatives, views, owners, and risk | ClickUp API + Supabase |
+| Jira Delivery | Tracks Jira projects, issues, priorities, owners, overdue work, stale work, and roadmap items | Jira Cloud REST API + Supabase |
+| Confluence Knowledge | Tracks Confluence spaces, pages, roadmaps, policies, owners, and content freshness | Confluence Cloud REST API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -268,6 +292,8 @@ ai-chief-of-staff/
       pipeline/page.js                     # HubSpot CEO deal pipeline
       tickets/page.js                      # Linear CEO ticket overview
       clickup/page.js                      # ClickUp OKR/task/roadmap overview
+      jira/page.js                         # Jira CEO issue/project overview
+      confluence/page.js                   # Confluence CEO knowledge overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
@@ -276,6 +302,8 @@ ai-chief-of-staff/
         hubspot/deals/route.js             # HubSpot deal pipeline sync and store
         linear/tickets/route.js            # Linear ticket sync and store
         clickup/overview/route.js          # ClickUp Goals, tasks, views sync and store
+        jira/overview/route.js             # Jira issue/project sync and store
+        confluence/overview/route.js       # Confluence page/space sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -321,6 +349,10 @@ flowchart LR
   K --> L[Master To-Do]
   O[ClickUp API] --> P[ClickUp Workspace Snapshot]
   P --> G
+  Q[Jira Cloud API] --> R[Jira Issue Snapshot]
+  S[Confluence Cloud API] --> T[Confluence Content Snapshot]
+  R --> G
+  T --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -334,6 +366,8 @@ flowchart LR
 9. PDF reports and board memos export from the live dashboard state.
 10. Slack events and channel sync harvest commitments into the Master To-Do.
 11. ClickUp sync stores Goals, tasks, views, roadmap items, and risk summaries for CEO review.
+12. Jira sync stores issues, projects, delivery risks, and owner pressure for CEO review.
+13. Confluence sync stores knowledge pages, spaces, freshness, and roadmap/policy coverage for CEO review.
 
 ---
 
@@ -352,6 +386,8 @@ Primary tables:
 | `hubspot_deal_snapshots` | Synced HubSpot deal pipeline snapshots |
 | `linear_ticket_snapshots` | Synced Linear issue snapshots |
 | `clickup_workspace_snapshots` | Synced ClickUp Goals, tasks, roadmap items, views, and summaries |
+| `jira_issue_snapshots` | Synced Jira issues, projects, delivery risks, and summaries |
+| `confluence_content_snapshots` | Synced Confluence pages, spaces, content freshness, and summaries |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -532,6 +568,50 @@ The ClickUp overview syncs authorized workspaces, Goals as OKRs, workspace tasks
 
 ---
 
+## Jira And Confluence
+
+This is a real Atlassian Cloud integration for teams that run execution in Jira and operating knowledge in Confluence.
+
+1. Create an Atlassian API token from your Atlassian account security settings.
+2. Use your Atlassian site URL, for example `https://your-company.atlassian.net`.
+3. Add shared env vars in Vercel, or connect Jira and Confluence manually from `/integrations`.
+4. Optional: set `JIRA_JQL` to restrict the Jira issue sync.
+5. Optional: set `CONFLUENCE_CQL` to restrict the Confluence page sync.
+6. Open `/jira` and click `Sync Jira`.
+7. Open `/confluence` and click `Sync Confluence`.
+
+Shared Atlassian env vars:
+
+```bash
+ATLASSIAN_SITE_URL=https://your-company.atlassian.net
+ATLASSIAN_EMAIL=you@company.com
+ATLASSIAN_API_TOKEN=your_atlassian_api_token
+```
+
+Jira-specific override env vars:
+
+```bash
+JIRA_SITE_URL=https://your-company.atlassian.net
+JIRA_EMAIL=you@company.com
+JIRA_API_TOKEN=your_atlassian_api_token
+JIRA_JQL=order by updated DESC
+```
+
+Confluence-specific override env vars:
+
+```bash
+CONFLUENCE_SITE_URL=https://your-company.atlassian.net
+CONFLUENCE_EMAIL=you@company.com
+CONFLUENCE_API_TOKEN=your_atlassian_api_token
+CONFLUENCE_CQL=type=page order by lastmodified desc
+```
+
+The Jira overview stores syncs in `jira_issue_snapshots` and tracks open issues, priority pressure, overdue work, stale work, completed issues, roadmap items, status mix, project load, assignee load, and CEO risk queue.
+
+The Confluence overview stores syncs in `confluence_content_snapshots` and tracks pages, spaces, recent updates, stale knowledge, roadmap pages, policy/runbook coverage, owner distribution, and executive source-of-truth health.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -586,6 +666,11 @@ CLICKUP_API_TOKEN=your_clickup_personal_token_optional
 CLICKUP_WORKSPACE_ID=your_clickup_workspace_id_optional
 CLICKUP_CLIENT_ID=your_clickup_oauth_client_id_optional
 CLICKUP_CLIENT_SECRET=your_clickup_oauth_client_secret_optional
+ATLASSIAN_SITE_URL=https://your-company.atlassian.net
+ATLASSIAN_EMAIL=you@company.com
+ATLASSIAN_API_TOKEN=your_atlassian_api_token
+JIRA_JQL=order by updated DESC
+CONFLUENCE_CQL=type=page order by lastmodified desc
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
@@ -695,8 +780,10 @@ The Executive page also includes a metrics glossary so operators can understand 
 11. Open `/pipeline` to sync and inspect the HubSpot deal pipeline.
 12. Open `/tickets` to sync and inspect Linear execution health.
 13. Open `/clickup` to sync and inspect ClickUp OKRs, tasks, and roadmap risks.
-14. Export a PDF report or board memo.
-15. Use `/todo` and `/slack` to track commitments and follow-ups.
+14. Open `/jira` to sync and inspect Jira delivery risks.
+15. Open `/confluence` to sync and inspect Confluence knowledge health.
+16. Export a PDF report or board memo.
+17. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -714,6 +801,8 @@ The Executive page also includes a metrics glossary so operators can understand 
 /pipeline                        HubSpot CEO deal pipeline
 /tickets                         Linear CEO ticket overview
 /clickup                         ClickUp CEO OKR/task/roadmap overview
+/jira                            Jira CEO issue/project overview
+/confluence                      Confluence CEO knowledge overview
 /sign-in                         Clerk sign-in
 /sign-up                         Clerk sign-up
 /api/current-data                 Supabase JSONB store
@@ -726,6 +815,8 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/hubspot/deals               HubSpot deal pipeline sync endpoint
 /api/linear/tickets              Linear ticket overview sync endpoint
 /api/clickup/overview            ClickUp OKR/task/roadmap sync endpoint
+/api/jira/overview               Jira issue/project sync endpoint
+/api/confluence/overview         Confluence page/space sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/slack/authorize Slack OAuth start

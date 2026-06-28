@@ -33,6 +33,8 @@ Additional operating-system tables:
 - `hubspot_deal_snapshots`: synced HubSpot deal pipeline snapshots for CEO revenue tracking.
 - `linear_ticket_snapshots`: synced Linear issue snapshots for CEO execution tracking.
 - `clickup_workspace_snapshots`: synced ClickUp Goals, workspace tasks, roadmap-style initiatives, views, and CEO execution summaries.
+- `jira_issue_snapshots`: synced Jira issues, projects, delivery risks, and CEO execution summaries.
+- `confluence_content_snapshots`: synced Confluence pages, spaces, knowledge freshness, roadmap/policy coverage, and CEO summaries.
 
 ## 2. Environment Variables
 
@@ -51,6 +53,11 @@ CLICKUP_API_TOKEN=your-clickup-personal-token-optional
 CLICKUP_WORKSPACE_ID=your-clickup-workspace-id-optional
 CLICKUP_CLIENT_ID=your-clickup-oauth-client-id-optional
 CLICKUP_CLIENT_SECRET=your-clickup-oauth-client-secret-optional
+ATLASSIAN_SITE_URL=https://your-company.atlassian.net
+ATLASSIAN_EMAIL=you@company.com
+ATLASSIAN_API_TOKEN=your-atlassian-api-token
+JIRA_JQL=order by updated DESC
+CONFLUENCE_CQL=type=page order by lastmodified desc
 ```
 
 The app uses the Supabase key only in Next.js route handlers. Do not expose the service role key in browser code.
@@ -70,7 +77,9 @@ The default embedding model produces 1536-dimensional vectors, matching `departm
 10. Deal pipeline syncs from HubSpot through `/api/hubspot/deals` into `hubspot_deal_snapshots`.
 11. Ticket overview syncs from Linear through `/api/linear/tickets` into `linear_ticket_snapshots`.
 12. ClickUp Goals, tasks, roadmap items, and views sync through `/api/clickup/overview` into `clickup_workspace_snapshots`.
-13. Board memo exports save memo metadata through `/api/board-memos`.
-14. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+13. Jira issues and projects sync through `/api/jira/overview` into `jira_issue_snapshots`.
+14. Confluence pages and spaces sync through `/api/confluence/overview` into `confluence_content_snapshots`.
+15. Board memo exports save memo metadata through `/api/board-memos`.
+16. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
 
 Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.

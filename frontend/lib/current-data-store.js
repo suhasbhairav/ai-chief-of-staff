@@ -126,6 +126,8 @@ export const readOrganizationSummary = async () => {
       "hubspot-deals.json",
       "linear-tickets.json",
       "clickup-workspace.json",
+      "jira-workspace.json",
+      "confluence-workspace.json",
       "integrations.json"
     ];
 
@@ -589,6 +591,8 @@ const DEFAULT_INTEGRATIONS = {
   hubspot: { connected: false, name: "HubSpot Deals", icon: "🧲" },
   linear: { connected: false, name: "Linear Tickets", icon: "🎫" },
   clickup: { connected: false, name: "ClickUp Workspace", icon: "☑️" },
+  jira: { connected: false, name: "Jira Issues", icon: "🔷" },
+  confluence: { connected: false, name: "Confluence Knowledge", icon: "📘" },
 };
 
 export const readIntegrations = async () => {
@@ -1107,6 +1111,197 @@ export const writeClickUpWorkspace = async ({
 
   if (error) {
     throw new Error(`Unable to save ClickUp workspace: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// JIRA ISSUE / PROJECT EXECUTION STORE
+// ==========================================
+
+const DEFAULT_JIRA_WORKSPACE_STORE = {
+  syncedAt: null,
+  siteUrl: null,
+  issues: [],
+  projects: [],
+  summary: {
+    totalIssues: 0,
+    openIssues: 0,
+    doneIssues: 0,
+    highPriorityIssues: 0,
+    overdueIssues: 0,
+    staleIssues: 0,
+    completedLast30Days: 0,
+    avgOpenAgeDays: 0,
+    statusBreakdown: [],
+    projectBreakdown: [],
+    priorityBreakdown: [],
+    assigneeBreakdown: [],
+    topRisks: [],
+  },
+};
+
+export const readJiraWorkspace = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const jiraPath = path.join(dir, "jira-workspace.json");
+    if (!fs.existsSync(jiraPath)) return DEFAULT_JIRA_WORKSPACE_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(jiraPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read jira-workspace.json:", error);
+      return DEFAULT_JIRA_WORKSPACE_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("jira_issue_snapshots")
+    .select("site_url, synced_at, issues, projects, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Jira workspace: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_JIRA_WORKSPACE_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    siteUrl: data.site_url,
+    issues: data.issues || [],
+    projects: data.projects || [],
+    summary: data.summary || DEFAULT_JIRA_WORKSPACE_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeJiraWorkspace = async ({ siteUrl, issues, projects, summary }) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    siteUrl: siteUrl || null,
+    issues: Array.isArray(issues) ? issues : [],
+    projects: Array.isArray(projects) ? projects : [],
+    summary: summary || DEFAULT_JIRA_WORKSPACE_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const jiraPath = path.join(dir, "jira-workspace.json");
+    fs.writeFileSync(jiraPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("jira_issue_snapshots").insert({
+    site_url: store.siteUrl,
+    synced_at: store.syncedAt,
+    issues: store.issues,
+    projects: store.projects,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Jira workspace: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// CONFLUENCE KNOWLEDGE / ROADMAP STORE
+// ==========================================
+
+const DEFAULT_CONFLUENCE_WORKSPACE_STORE = {
+  syncedAt: null,
+  siteUrl: null,
+  pages: [],
+  spaces: [],
+  summary: {
+    totalPages: 0,
+    recentlyUpdated: 0,
+    stalePages: 0,
+    roadmapPages: 0,
+    policyPages: 0,
+    knowledgeOwners: 0,
+    spaceBreakdown: [],
+    ownerBreakdown: [],
+    typeBreakdown: [],
+    topPages: [],
+  },
+};
+
+export const readConfluenceWorkspace = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const confluencePath = path.join(dir, "confluence-workspace.json");
+    if (!fs.existsSync(confluencePath)) return DEFAULT_CONFLUENCE_WORKSPACE_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(confluencePath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read confluence-workspace.json:", error);
+      return DEFAULT_CONFLUENCE_WORKSPACE_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("confluence_content_snapshots")
+    .select("site_url, synced_at, pages, spaces, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Confluence workspace: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_CONFLUENCE_WORKSPACE_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    siteUrl: data.site_url,
+    pages: data.pages || [],
+    spaces: data.spaces || [],
+    summary: data.summary || DEFAULT_CONFLUENCE_WORKSPACE_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeConfluenceWorkspace = async ({ siteUrl, pages, spaces, summary }) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    siteUrl: siteUrl || null,
+    pages: Array.isArray(pages) ? pages : [],
+    spaces: Array.isArray(spaces) ? spaces : [],
+    summary: summary || DEFAULT_CONFLUENCE_WORKSPACE_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const confluencePath = path.join(dir, "confluence-workspace.json");
+    fs.writeFileSync(confluencePath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("confluence_content_snapshots").insert({
+    site_url: store.siteUrl,
+    synced_at: store.syncedAt,
+    pages: store.pages,
+    spaces: store.spaces,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Confluence workspace: ${error.message}`);
   }
 
   return store;

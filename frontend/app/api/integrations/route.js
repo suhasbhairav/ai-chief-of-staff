@@ -4,6 +4,10 @@ import { getSlackCredentials, slackApi } from "@/lib/slack/server";
 import { validateHubSpotToken } from "@/lib/hubspot/server";
 import { validateLinearToken } from "@/lib/linear/server";
 import { createClickUpAuthHeader, validateClickUpToken } from "@/lib/clickup/server";
+import {
+  validateConfluenceCredentials,
+  validateJiraCredentials,
+} from "@/lib/atlassian/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -69,6 +73,50 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.clickup,
+  jira: integrations?.jira
+    ? {
+        ...integrations.jira,
+        api_token: undefined,
+        hasToken: Boolean(
+          integrations.jira.api_token ||
+            process.env.JIRA_API_TOKEN ||
+            process.env.ATLASSIAN_API_TOKEN
+        ),
+        site_url:
+          integrations.jira.site_url ||
+          process.env.JIRA_SITE_URL ||
+          process.env.ATLASSIAN_SITE_URL ||
+          "",
+        connected: Boolean(
+          integrations.jira.connected ||
+            ((process.env.JIRA_API_TOKEN || process.env.ATLASSIAN_API_TOKEN) &&
+              (process.env.JIRA_SITE_URL || process.env.ATLASSIAN_SITE_URL) &&
+              (process.env.JIRA_EMAIL || process.env.ATLASSIAN_EMAIL))
+        ),
+      }
+    : integrations?.jira,
+  confluence: integrations?.confluence
+    ? {
+        ...integrations.confluence,
+        api_token: undefined,
+        hasToken: Boolean(
+          integrations.confluence.api_token ||
+            process.env.CONFLUENCE_API_TOKEN ||
+            process.env.ATLASSIAN_API_TOKEN
+        ),
+        site_url:
+          integrations.confluence.site_url ||
+          process.env.CONFLUENCE_SITE_URL ||
+          process.env.ATLASSIAN_SITE_URL ||
+          "",
+        connected: Boolean(
+          integrations.confluence.connected ||
+            ((process.env.CONFLUENCE_API_TOKEN || process.env.ATLASSIAN_API_TOKEN) &&
+              (process.env.CONFLUENCE_SITE_URL || process.env.ATLASSIAN_SITE_URL) &&
+              (process.env.CONFLUENCE_EMAIL || process.env.ATLASSIAN_EMAIL))
+        ),
+      }
+    : integrations?.confluence,
 });
 
 export async function GET() {
@@ -82,6 +130,16 @@ export async function GET() {
       hubspotEnvConfigured: Boolean(process.env.HUBSPOT_ACCESS_TOKEN),
       linearEnvConfigured: Boolean(process.env.LINEAR_API_KEY),
       clickupEnvConfigured: Boolean(process.env.CLICKUP_API_TOKEN),
+      jiraEnvConfigured: Boolean(
+        (process.env.JIRA_API_TOKEN || process.env.ATLASSIAN_API_TOKEN) &&
+          (process.env.JIRA_SITE_URL || process.env.ATLASSIAN_SITE_URL) &&
+          (process.env.JIRA_EMAIL || process.env.ATLASSIAN_EMAIL)
+      ),
+      confluenceEnvConfigured: Boolean(
+        (process.env.CONFLUENCE_API_TOKEN || process.env.ATLASSIAN_API_TOKEN) &&
+          (process.env.CONFLUENCE_SITE_URL || process.env.ATLASSIAN_SITE_URL) &&
+          (process.env.CONFLUENCE_EMAIL || process.env.ATLASSIAN_EMAIL)
+      ),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -263,6 +321,84 @@ export async function POST(request) {
           access_token: current.clickup?.access_token,
         };
       }
+    }
+
+    if (payload.jira?.api_token && payload.jira?.site_url && payload.jira?.email) {
+      try {
+        const account = await validateJiraCredentials({
+          siteUrl: payload.jira.site_url.trim(),
+          email: payload.jira.email.trim(),
+          apiToken: payload.jira.api_token.trim(),
+        });
+        payload.jira = {
+          connected: true,
+          name: "Jira Issues",
+          icon: "🔷",
+          site_url: account.siteUrl,
+          email: payload.jira.email.trim(),
+          api_token: payload.jira.api_token.trim(),
+          jql: payload.jira.jql?.trim() || "order by updated DESC",
+          account_id: account.accountId,
+          user_name: account.displayName,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Jira validation failed: ${error.message}. Use your Atlassian site URL, account email, and API token with Jira access.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.jira && payload.jira.connected === false) {
+      payload.jira = {
+        connected: false,
+        name: "Jira Issues",
+        icon: "🔷",
+      };
+    } else if (payload.jira && !payload.jira.api_token && current.jira?.api_token) {
+      payload.jira = {
+        ...current.jira,
+        ...payload.jira,
+        api_token: current.jira.api_token,
+      };
+    }
+
+    if (payload.confluence?.api_token && payload.confluence?.site_url && payload.confluence?.email) {
+      try {
+        const account = await validateConfluenceCredentials({
+          siteUrl: payload.confluence.site_url.trim(),
+          email: payload.confluence.email.trim(),
+          apiToken: payload.confluence.api_token.trim(),
+        });
+        payload.confluence = {
+          connected: true,
+          name: "Confluence Knowledge",
+          icon: "📘",
+          site_url: account.siteUrl,
+          email: payload.confluence.email.trim(),
+          api_token: payload.confluence.api_token.trim(),
+          cql: payload.confluence.cql?.trim() || "type=page order by lastmodified desc",
+          account_id: account.accountId,
+          user_name: account.displayName,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Confluence validation failed: ${error.message}. Use your Atlassian site URL, account email, and API token with Confluence access.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.confluence && payload.confluence.connected === false) {
+      payload.confluence = {
+        connected: false,
+        name: "Confluence Knowledge",
+        icon: "📘",
+      };
+    } else if (payload.confluence && !payload.confluence.api_token && current.confluence?.api_token) {
+      payload.confluence = {
+        ...current.confluence,
+        ...payload.confluence,
+        api_token: current.confluence.api_token,
+      };
     }
     
     // Merge or update
