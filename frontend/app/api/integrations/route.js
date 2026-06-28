@@ -9,6 +9,7 @@ import {
   validateJiraCredentials,
 } from "@/lib/atlassian/server";
 import { validateGitHubToken } from "@/lib/github/server";
+import { validateAsanaToken } from "@/lib/asana/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -128,6 +129,16 @@ const sanitizeIntegrations = (integrations) => ({
         connected: Boolean(integrations.github.connected || process.env.GITHUB_TOKEN),
       }
     : integrations?.github,
+  asana: integrations?.asana
+    ? {
+        ...integrations.asana,
+        access_token: undefined,
+        hasToken: Boolean(integrations.asana.access_token || process.env.ASANA_ACCESS_TOKEN),
+        workspace_gid: integrations.asana.workspace_gid || process.env.ASANA_WORKSPACE_GID || "",
+        project_gids: integrations.asana.project_gids || process.env.ASANA_PROJECT_GIDS || "",
+        connected: Boolean(integrations.asana.connected || process.env.ASANA_ACCESS_TOKEN),
+      }
+    : integrations?.asana,
 });
 
 export async function GET() {
@@ -152,6 +163,7 @@ export async function GET() {
           (process.env.CONFLUENCE_EMAIL || process.env.ATLASSIAN_EMAIL)
       ),
       githubEnvConfigured: Boolean(process.env.GITHUB_TOKEN),
+      asanaEnvConfigured: Boolean(process.env.ASANA_ACCESS_TOKEN),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -445,6 +457,44 @@ export async function POST(request) {
         ...current.github,
         ...payload.github,
         access_token: current.github.access_token,
+      };
+    }
+
+    if (payload.asana?.access_token) {
+      try {
+        const account = await validateAsanaToken(payload.asana.access_token.trim());
+        const workspaceGid = payload.asana.workspace_gid?.trim() || account.workspaces?.[0]?.gid || "";
+        const workspace = account.workspaces?.find((item) => item.gid === workspaceGid);
+        payload.asana = {
+          connected: true,
+          name: "Asana Work Management",
+          icon: "🔴",
+          access_token: payload.asana.access_token.trim(),
+          workspace_gid: workspaceGid,
+          workspace_name: workspace?.name || account.workspaces?.[0]?.name || "",
+          project_gids: payload.asana.project_gids?.trim() || "",
+          user_gid: account.gid,
+          user_name: account.name,
+          user_email: account.email,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Asana validation failed: ${error.message}. Use a valid Asana personal access token or OAuth token with workspace, project, and task read access.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.asana && payload.asana.connected === false) {
+      payload.asana = {
+        connected: false,
+        name: "Asana Work Management",
+        icon: "🔴",
+      };
+    } else if (payload.asana && !payload.asana.access_token && current.asana?.access_token) {
+      payload.asana = {
+        ...current.asana,
+        ...payload.asana,
+        access_token: current.asana.access_token,
       };
     }
     

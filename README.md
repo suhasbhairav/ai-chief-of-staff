@@ -24,6 +24,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="Jira" src="https://img.shields.io/badge/Jira-Issue%20Execution-0052CC?style=for-the-badge&logo=jira" />
 <img alt="Confluence" src="https://img.shields.io/badge/Confluence-Knowledge%20Base-172B4D?style=for-the-badge&logo=confluence" />
 <img alt="GitHub" src="https://img.shields.io/badge/GitHub-PRs%20Bugs%20Repos-181717?style=for-the-badge&logo=github" />
+<img alt="Asana" src="https://img.shields.io/badge/Asana-Work%20Management-F06A6A?style=for-the-badge&logo=asana" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -240,6 +241,7 @@ The product is designed around a simple idea: every important department should 
 | Jira Delivery | Tracks Jira projects, issues, priorities, owners, overdue work, stale work, and roadmap items | Jira Cloud REST API + Supabase |
 | Confluence Knowledge | Tracks Confluence spaces, pages, roadmaps, policies, owners, and content freshness | Confluence Cloud REST API + Supabase |
 | GitHub Engineering | Tracks repositories, pull requests, issues, bug queues, stale work, and engineering risk | GitHub REST API + Supabase |
+| Asana Work Management | Tracks projects, tasks, owners, overdue work, due-soon work, stale execution, and delivery risk | Asana REST API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -297,6 +299,7 @@ ai-chief-of-staff/
       jira/page.js                         # Jira CEO issue/project overview
       confluence/page.js                   # Confluence CEO knowledge overview
       github/page.js                       # GitHub CEO PR/bug/repository overview
+      asana/page.js                        # Asana CEO work management overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
@@ -308,6 +311,7 @@ ai-chief-of-staff/
         jira/overview/route.js             # Jira issue/project sync and store
         confluence/overview/route.js       # Confluence page/space sync and store
         github/overview/route.js           # GitHub repository/PR/issue sync and store
+        asana/overview/route.js            # Asana project/task sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -356,9 +360,11 @@ flowchart LR
   Q[Jira Cloud API] --> R[Jira Issue Snapshot]
   S[Confluence Cloud API] --> T[Confluence Content Snapshot]
   U[GitHub REST API] --> V[GitHub Repo Snapshot]
+  W[Asana REST API] --> X[Asana Workspace Snapshot]
   R --> G
   T --> G
   V --> G
+  X --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -375,6 +381,7 @@ flowchart LR
 12. Jira sync stores issues, projects, delivery risks, and owner pressure for CEO review.
 13. Confluence sync stores knowledge pages, spaces, freshness, and roadmap/policy coverage for CEO review.
 14. GitHub sync stores repositories, PRs, issues, bugs, stale engineering work, and repo health for CEO review.
+15. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
 
 ---
 
@@ -396,6 +403,7 @@ Primary tables:
 | `jira_issue_snapshots` | Synced Jira issues, projects, delivery risks, and summaries |
 | `confluence_content_snapshots` | Synced Confluence pages, spaces, content freshness, and summaries |
 | `github_repo_snapshots` | Synced GitHub repositories, pull requests, issues, bugs, and summaries |
+| `asana_workspace_snapshots` | Synced Asana projects, tasks, owners, overdue work, stale work, and summaries |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -403,7 +411,7 @@ Primary tables:
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
-For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, board memos, historical imports, and vector search.
+For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets AICoS application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, board memos, historical imports, and vector search.
 
 ---
 
@@ -643,6 +651,27 @@ The GitHub overview stores syncs in `github_repo_snapshots` and tracks repositor
 
 ---
 
+## Asana Work Management
+
+This is a real Asana REST API integration for teams that run work management, cross-functional initiatives, launch plans, and operating cadences in Asana.
+
+1. Create an Asana personal access token or OAuth token.
+2. Grant access to the workspaces, projects, and tasks AICoS should read.
+3. Add env vars in Vercel, or connect Asana manually from `/integrations`.
+4. Optional: set `ASANA_WORKSPACE_GID` to choose a workspace.
+5. Optional: set `ASANA_PROJECT_GIDS` to comma-separated project GIDs.
+6. Open `/asana` and click `Sync Asana`.
+
+```bash
+ASANA_ACCESS_TOKEN=your_asana_personal_access_token
+ASANA_WORKSPACE_GID=your_workspace_gid_optional
+ASANA_PROJECT_GIDS=project_gid_one,project_gid_two_optional
+```
+
+The Asana overview stores syncs in `asana_workspace_snapshots` and tracks projects, open tasks, completed tasks, overdue work, due-soon work, stale tasks, owner gaps, project load, owner load, and CEO execution risk queue.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -705,6 +734,9 @@ CONFLUENCE_CQL=type=page order by lastmodified desc
 GITHUB_TOKEN=your_github_token
 GITHUB_OWNER=your_org_or_user_optional
 GITHUB_REPOS=repo_one,repo_two_optional
+ASANA_ACCESS_TOKEN=your_asana_personal_access_token
+ASANA_WORKSPACE_GID=your_workspace_gid_optional
+ASANA_PROJECT_GIDS=project_gid_one,project_gid_two_optional
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
@@ -817,8 +849,9 @@ The Executive page also includes a metrics glossary so operators can understand 
 14. Open `/jira` to sync and inspect Jira delivery risks.
 15. Open `/confluence` to sync and inspect Confluence knowledge health.
 16. Open `/github` to sync and inspect GitHub PRs, bugs, stale issues, and repo health.
-17. Export a PDF report or board memo.
-18. Use `/todo` and `/slack` to track commitments and follow-ups.
+17. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
+18. Export a PDF report or board memo.
+19. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -839,6 +872,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /jira                            Jira CEO issue/project overview
 /confluence                      Confluence CEO knowledge overview
 /github                          GitHub CEO PR/bug/repository overview
+/asana                           Asana CEO work management overview
 /sign-in                         Clerk sign-in
 /sign-up                         Clerk sign-up
 /api/current-data                 Supabase JSONB store
@@ -854,6 +888,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/jira/overview               Jira issue/project sync endpoint
 /api/confluence/overview         Confluence page/space sync endpoint
 /api/github/overview             GitHub repository/PR/issue sync endpoint
+/api/asana/overview              Asana project/task sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/slack/authorize Slack OAuth start

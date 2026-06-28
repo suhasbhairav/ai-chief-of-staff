@@ -129,6 +129,7 @@ export const readOrganizationSummary = async () => {
       "jira-workspace.json",
       "confluence-workspace.json",
       "github-workspace.json",
+      "asana-workspace.json",
       "integrations.json"
     ];
 
@@ -595,6 +596,7 @@ const DEFAULT_INTEGRATIONS = {
   jira: { connected: false, name: "Jira Issues", icon: "🔷" },
   confluence: { connected: false, name: "Confluence Knowledge", icon: "📘" },
   github: { connected: false, name: "GitHub Engineering", icon: "🐙" },
+  asana: { connected: false, name: "Asana Work Management", icon: "🔴" },
 };
 
 export const readIntegrations = async () => {
@@ -1412,6 +1414,113 @@ export const writeGitHubWorkspace = async ({
 
   if (error) {
     throw new Error(`Unable to save GitHub workspace: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// ASANA WORKSPACE / PROJECT / TASK STORE
+// ==========================================
+
+const DEFAULT_ASANA_WORKSPACE_STORE = {
+  syncedAt: null,
+  workspaceGid: null,
+  workspaceName: null,
+  projects: [],
+  tasks: [],
+  summary: {
+    totalProjects: 0,
+    totalTasks: 0,
+    openTasks: 0,
+    completedTasks: 0,
+    overdueTasks: 0,
+    dueSoonTasks: 0,
+    staleTasks: 0,
+    unassignedTasks: 0,
+    avgOpenAgeDays: 0,
+    statusBreakdown: [],
+    projectBreakdown: [],
+    ownerBreakdown: [],
+    topRisks: [],
+  },
+};
+
+export const readAsanaWorkspace = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const asanaPath = path.join(dir, "asana-workspace.json");
+    if (!fs.existsSync(asanaPath)) return DEFAULT_ASANA_WORKSPACE_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(asanaPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read asana-workspace.json:", error);
+      return DEFAULT_ASANA_WORKSPACE_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("asana_workspace_snapshots")
+    .select("workspace_gid, workspace_name, synced_at, projects, tasks, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Asana workspace: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_ASANA_WORKSPACE_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    workspaceGid: data.workspace_gid,
+    workspaceName: data.workspace_name,
+    projects: data.projects || [],
+    tasks: data.tasks || [],
+    summary: data.summary || DEFAULT_ASANA_WORKSPACE_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeAsanaWorkspace = async ({
+  workspaceGid,
+  workspaceName,
+  projects,
+  tasks,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    workspaceGid: workspaceGid || null,
+    workspaceName: workspaceName || null,
+    projects: Array.isArray(projects) ? projects : [],
+    tasks: Array.isArray(tasks) ? tasks : [],
+    summary: summary || DEFAULT_ASANA_WORKSPACE_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const asanaPath = path.join(dir, "asana-workspace.json");
+    fs.writeFileSync(asanaPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("asana_workspace_snapshots").insert({
+    workspace_gid: store.workspaceGid,
+    workspace_name: store.workspaceName,
+    synced_at: store.syncedAt,
+    projects: store.projects,
+    tasks: store.tasks,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Asana workspace: ${error.message}`);
   }
 
   return store;

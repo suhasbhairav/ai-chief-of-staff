@@ -203,6 +203,19 @@ create table if not exists public.github_repo_snapshots (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.asana_workspace_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  source text not null default 'asana',
+  workspace_gid text,
+  workspace_name text,
+  synced_at timestamptz not null default now(),
+  projects jsonb not null default '[]'::jsonb,
+  tasks jsonb not null default '[]'::jsonb,
+  summary jsonb not null default '{}'::jsonb,
+  content jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists department_snapshots_department_id_idx
   on public.department_snapshots (department_id);
 
@@ -281,6 +294,12 @@ create index if not exists github_repo_snapshots_synced_at_idx
 
 create index if not exists github_repo_snapshots_content_gin_idx
   on public.github_repo_snapshots using gin (content);
+
+create index if not exists asana_workspace_snapshots_synced_at_idx
+  on public.asana_workspace_snapshots (synced_at desc);
+
+create index if not exists asana_workspace_snapshots_content_gin_idx
+  on public.asana_workspace_snapshots using gin (content);
 
 create or replace function public.match_department_embeddings(
   query_embedding vector(1536),
@@ -363,6 +382,7 @@ alter table public.clickup_workspace_snapshots enable row level security;
 alter table public.jira_issue_snapshots enable row level security;
 alter table public.confluence_content_snapshots enable row level security;
 alter table public.github_repo_snapshots enable row level security;
+alter table public.asana_workspace_snapshots enable row level security;
 
 grant select, insert, update, delete on public.department_snapshots to service_role;
 grant select, insert, update, delete on public.organization_summaries to service_role;
@@ -379,4 +399,5 @@ grant select, insert, update, delete on public.clickup_workspace_snapshots to se
 grant select, insert, update, delete on public.jira_issue_snapshots to service_role;
 grant select, insert, update, delete on public.confluence_content_snapshots to service_role;
 grant select, insert, update, delete on public.github_repo_snapshots to service_role;
+grant select, insert, update, delete on public.asana_workspace_snapshots to service_role;
 grant execute on function public.match_department_embeddings(vector, int, text) to service_role;

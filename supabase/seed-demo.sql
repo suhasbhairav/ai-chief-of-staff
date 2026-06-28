@@ -20,7 +20,8 @@ truncate table
   public.clickup_workspace_snapshots,
   public.jira_issue_snapshots,
   public.confluence_content_snapshots,
-  public.github_repo_snapshots
+  public.github_repo_snapshots,
+  public.asana_workspace_snapshots
 restart identity cascade;
 
 create temporary table demo_department_seed (
@@ -405,7 +406,8 @@ select
       'clickup', jsonb_build_object('connected', true, 'name', 'ClickUp Workspace', 'icon', '☑️', 'workspace_id', 'demo-clickup-workspace', 'workspace_name', 'AICoS Demo Workspace', 'user_name', 'Demo CEO', 'hasToken', true),
       'jira', jsonb_build_object('connected', true, 'name', 'Jira Issues', 'icon', '🔷', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'jql', 'project in (PLAT, GTM, DATA) order by updated DESC', 'user_name', 'Demo CEO', 'hasToken', true),
       'confluence', jsonb_build_object('connected', true, 'name', 'Confluence Knowledge', 'icon', '📘', 'site_url', 'https://aicos-demo.atlassian.net', 'email', 'demo-ceo@example.com', 'cql', 'type=page order by lastmodified desc', 'user_name', 'Demo CEO', 'hasToken', true),
-      'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'aicos-demo', 'repos', 'aicos-web,aicos-api,aicos-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true)
+      'github', jsonb_build_object('connected', true, 'name', 'GitHub Engineering', 'icon', '🐙', 'owner', 'aicos-demo', 'repos', 'aicos-web,aicos-api,aicos-agents', 'user_login', 'demo-ceo', 'user_name', 'Demo CEO', 'hasToken', true),
+      'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'AICoS Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -605,6 +607,26 @@ values (
   ]'::jsonb,
   '{"totalRepositories":3,"openPullRequests":3,"mergedPullRequests":1,"draftPullRequests":1,"stalePullRequests":1,"openIssues":3,"openBugs":2,"staleIssues":2,"closedIssuesLast30Days":1,"prsByRepo":[{"name":"aicos-demo/aicos-web","count":1},{"name":"aicos-demo/aicos-api","count":1},{"name":"aicos-demo/aicos-agents","count":1}],"issuesByRepo":[{"name":"aicos-demo/aicos-web","count":2},{"name":"aicos-demo/aicos-agents","count":1}],"bugsByRepo":[{"name":"aicos-demo/aicos-agents","count":1},{"name":"aicos-demo/aicos-web","count":1}],"languageBreakdown":[{"name":"JavaScript","count":1},{"name":"Python","count":1},{"name":"TypeScript","count":1}],"topRisks":[{"id":301,"number":88,"title":"P1: assistant response cache can show stale department evidence","repo":"aicos-demo/aicos-agents","htmlUrl":"https://github.com/aicos-demo/aicos-agents/issues/88","riskType":"Open bug","isBug":true,"ageDays":21},{"id":202,"number":57,"title":"Harden GitHub sync pagination limits","repo":"aicos-demo/aicos-api","htmlUrl":"https://github.com/aicos-demo/aicos-api/pull/57","riskType":"Stale PR","ageDays":16},{"id":303,"number":61,"title":"Add integration health badges to executive dashboard","repo":"aicos-demo/aicos-web","htmlUrl":"https://github.com/aicos-demo/aicos-web/issues/61","riskType":"Stale issue","ageDays":18}]}'::jsonb,
   '{"source":"github","owner":"aicos-demo","syncedAt":"2026-09-30T18:35:00Z"}'::jsonb
+);
+
+insert into public.asana_workspace_snapshots (workspace_gid, workspace_name, synced_at, projects, tasks, summary, content)
+values (
+  'demo-asana-workspace',
+  'AICoS Operating Workspace',
+  '2026-09-30T18:40:00Z',
+  '[
+    {"gid":"launch-q4","name":"Q4 Enterprise Launch","archived":false,"completed":false,"completedAt":null,"createdAt":"2026-07-01T09:00:00Z","modifiedAt":"2026-09-29T13:00:00Z","owner":"Product","team":"GTM","statusColor":"green","statusTitle":"On track","statusText":"Launch assets and compliance gates are converging.","url":"https://app.asana.com/0/launch-q4"},
+    {"gid":"enterprise-readiness","name":"Enterprise Readiness Program","archived":false,"completed":false,"completedAt":null,"createdAt":"2026-06-15T09:00:00Z","modifiedAt":"2026-09-27T15:00:00Z","owner":"Operations","team":"CEO Staff","statusColor":"yellow","statusTitle":"At risk","statusText":"SOC2 and procurement workstreams need executive attention.","url":"https://app.asana.com/0/enterprise-readiness"},
+    {"gid":"board-operating-rhythm","name":"Board Operating Rhythm","archived":false,"completed":false,"completedAt":null,"createdAt":"2026-08-01T09:00:00Z","modifiedAt":"2026-09-28T12:00:00Z","owner":"Finance","team":"CEO Staff","statusColor":"green","statusTitle":"On track","statusText":"Board memo process is stable.","url":"https://app.asana.com/0/board-operating-rhythm"}
+  ]'::jsonb,
+  '[
+    {"gid":"asana-1","name":"Finalize enterprise launch readiness memo","completed":false,"completedAt":null,"createdAt":"2026-09-12T09:00:00Z","modifiedAt":"2026-09-29T09:00:00Z","dueDate":"2026-10-03","assignee":"Product","assigneeEmail":"product@example.com","projectGid":"launch-q4","projectName":"Q4 Enterprise Launch","url":"https://app.asana.com/0/launch-q4/asana-1","tags":["launch","board"],"isOpen":true,"isOverdue":false,"isDueSoon":true,"isStale":false,"isUnassigned":false,"ageDays":18,"updatedDaysAgo":1},
+    {"gid":"asana-2","name":"Close SOC2 procurement evidence gap","completed":false,"completedAt":null,"createdAt":"2026-09-04T09:00:00Z","modifiedAt":"2026-09-12T09:00:00Z","dueDate":"2026-09-24","assignee":"IT","assigneeEmail":"it@example.com","projectGid":"enterprise-readiness","projectName":"Enterprise Readiness Program","url":"https://app.asana.com/0/enterprise-readiness/asana-2","tags":["soc2","risk"],"isOpen":true,"isOverdue":true,"isDueSoon":false,"isStale":true,"isUnassigned":false,"ageDays":26,"updatedDaysAgo":18},
+    {"gid":"asana-3","name":"Assign owner for healthcare launch runbook","completed":false,"completedAt":null,"createdAt":"2026-09-09T09:00:00Z","modifiedAt":"2026-09-10T09:00:00Z","dueDate":"2026-09-28","assignee":"Unassigned","assigneeEmail":null,"projectGid":"enterprise-readiness","projectName":"Enterprise Readiness Program","url":"https://app.asana.com/0/enterprise-readiness/asana-3","tags":["launch","owner-gap"],"isOpen":true,"isOverdue":true,"isDueSoon":false,"isStale":true,"isUnassigned":true,"ageDays":21,"updatedDaysAgo":20},
+    {"gid":"asana-4","name":"Publish board metrics appendix","completed":true,"completedAt":"2026-09-26T16:00:00Z","createdAt":"2026-09-16T09:00:00Z","modifiedAt":"2026-09-26T16:00:00Z","dueDate":"2026-09-27","assignee":"Finance","assigneeEmail":"finance@example.com","projectGid":"board-operating-rhythm","projectName":"Board Operating Rhythm","url":"https://app.asana.com/0/board-operating-rhythm/asana-4","tags":["board"],"isOpen":false,"isOverdue":false,"isDueSoon":false,"isStale":false,"isUnassigned":false,"ageDays":14,"updatedDaysAgo":4}
+  ]'::jsonb,
+  '{"totalProjects":3,"totalTasks":4,"openTasks":3,"completedTasks":1,"overdueTasks":2,"dueSoonTasks":1,"staleTasks":2,"unassignedTasks":1,"avgOpenAgeDays":22,"statusBreakdown":[{"name":"Open","count":3},{"name":"Completed","count":1},{"name":"Overdue","count":2},{"name":"Stale","count":2}],"projectBreakdown":[{"name":"Enterprise Readiness Program","count":2},{"name":"Q4 Enterprise Launch","count":1}],"ownerBreakdown":[{"name":"IT","count":1},{"name":"Product","count":1},{"name":"Unassigned","count":1}],"topRisks":[{"gid":"asana-2","name":"Close SOC2 procurement evidence gap","projectName":"Enterprise Readiness Program","assignee":"IT","url":"https://app.asana.com/0/enterprise-readiness/asana-2","isOverdue":true,"isStale":true,"isUnassigned":false,"ageDays":26},{"gid":"asana-3","name":"Assign owner for healthcare launch runbook","projectName":"Enterprise Readiness Program","assignee":"Unassigned","url":"https://app.asana.com/0/enterprise-readiness/asana-3","isOverdue":true,"isStale":true,"isUnassigned":true,"ageDays":21}]}'::jsonb,
+  '{"source":"asana","workspaceName":"AICoS Operating Workspace","syncedAt":"2026-09-30T18:40:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (

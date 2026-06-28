@@ -124,6 +124,12 @@ export default function RootLayout({ children }) {
                       icon: "🐙",
                     },
                     {
+                      id: "asana",
+                      name: "Asana Work",
+                      href: "/asana",
+                      icon: "🔴",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",
