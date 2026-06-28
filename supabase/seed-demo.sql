@@ -24,7 +24,8 @@ truncate table
   public.asana_workspace_snapshots,
   public.mailchimp_marketing_snapshots,
   public.quickbooks_accounting_snapshots,
-  public.salesforce_crm_snapshots
+  public.salesforce_crm_snapshots,
+  public.stripe_payments_snapshots
 restart identity cascade;
 
 create temporary table demo_department_seed (
@@ -413,7 +414,8 @@ select
       'asana', jsonb_build_object('connected', true, 'name', 'Asana Work Management', 'icon', '🔴', 'workspace_gid', 'demo-asana-workspace', 'workspace_name', 'TAI Chief Operating Workspace', 'project_gids', 'launch-q4,enterprise-readiness', 'user_name', 'Demo CEO', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
       'mailchimp', jsonb_build_object('connected', true, 'name', 'Mailchimp Marketing', 'icon', '📬', 'server_prefix', 'us21', 'account_id', 'demo-mailchimp-account', 'account_name', 'TAI Chief Growth', 'user_email', 'demo-ceo@example.com', 'hasToken', true),
       'quickbooks', jsonb_build_object('connected', true, 'name', 'QuickBooks Accounting', 'icon', '📗', 'realm_id', 'demo-qbo-company', 'company_name', 'TAI Chief Demo Co', 'environment', 'sandbox', 'hasToken', true),
-      'salesforce', jsonb_build_object('connected', true, 'name', 'Salesforce CRM', 'icon', '☁️', 'instance_url', 'https://tai-chief-demo.my.salesforce.com', 'api_version', 'v61.0', 'organization_id', '00DDEMOCRM', 'organization_name', 'TAI Chief Revenue Cloud', 'hasToken', true)
+      'salesforce', jsonb_build_object('connected', true, 'name', 'Salesforce CRM', 'icon', '☁️', 'instance_url', 'https://tai-chief-demo.my.salesforce.com', 'api_version', 'v61.0', 'organization_id', '00DDEMOCRM', 'organization_name', 'TAI Chief Revenue Cloud', 'hasToken', true),
+      'stripe', jsonb_build_object('connected', true, 'name', 'Stripe Payments', 'icon', '💳', 'account_id', 'acct_demo_stripe', 'account_name', 'TAI Chief Payments', 'country', 'US', 'default_currency', 'usd', 'hasToken', true)
     ),
     'todoStore', jsonb_build_object(
       'updatedAt', '2026-09-30T18:00:00Z',
@@ -705,6 +707,39 @@ values (
   ]'::jsonb,
   '{"totalAccounts":3,"totalLeads":3,"openLeads":2,"totalOpportunities":4,"openOpportunities":3,"closedWonAmount":220000,"openPipelineAmount":1240000,"weightedPipelineAmount":854000,"forecastThisQuarter":0,"staleOpportunities":1,"overdueCloseOpportunities":1,"avgDealSize":413333,"winRate":100,"stageBreakdown":[{"name":"Negotiation/Review","count":1},{"name":"Security Review","count":1},{"name":"Proposal/Price Quote","count":1}],"ownerBreakdown":[{"name":"Ava Chen","count":1},{"name":"Marco Silva","count":1},{"name":"Priya Rao","count":1}],"leadSourceBreakdown":[{"name":"Webinar","count":1},{"name":"Paid Search","count":1}],"topOpenOpportunities":[{"id":"006-demo-1","name":"Northstar Bank Enterprise Expansion","accountName":"Northstar Bank","stage":"Negotiation/Review","amount":640000,"probability":80,"weightedAmount":512000,"closeDate":"2026-10-15","isOpen":true,"owner":"Ava Chen"},{"id":"006-demo-2","name":"Helio Health Platform Deal","accountName":"Helio Health","stage":"Security Review","amount":420000,"probability":60,"weightedAmount":252000,"closeDate":"2026-09-25","isOpen":true,"owner":"Marco Silva"},{"id":"006-demo-3","name":"Zest Foods Multi-region Rollout","accountName":"Zest Foods","stage":"Proposal/Price Quote","amount":180000,"probability":50,"weightedAmount":90000,"closeDate":"2026-11-12","isOpen":true,"owner":"Priya Rao"}],"topRisks":[{"id":"006-demo-2","name":"Helio Health Platform Deal","riskType":"Overdue close date","amount":420000,"owner":"Marco Silva"},{"id":"00Q-demo-1","name":"Maya Patel","company":"Orion Manufacturing","riskType":"Stale lead","amount":450000000,"owner":"Priya Rao"}]}'::jsonb,
   '{"source":"salesforce","organizationName":"TAI Chief Revenue Cloud","syncedAt":"2026-09-30T18:55:00Z"}'::jsonb
+);
+
+insert into public.stripe_payments_snapshots (account_id, account_name, synced_at, customers, payment_intents, subscriptions, invoices, balance, summary, content)
+values (
+  'acct_demo_stripe',
+  'TAI Chief Payments',
+  '2026-09-30T19:00:00Z',
+  '[
+    {"id":"cus_demo_northstar","name":"Northstar Bank","email":"finance@northstar.example","createdAt":"2026-04-02T09:00:00Z","currency":"USD","delinquent":false,"balance":0,"livemode":false},
+    {"id":"cus_demo_helio","name":"Helio Health","email":"ap@helio.example","createdAt":"2026-05-16T09:00:00Z","currency":"USD","delinquent":true,"balance":42000,"livemode":false},
+    {"id":"cus_demo_zest","name":"Zest Foods","email":"billing@zest.example","createdAt":"2026-06-22T09:00:00Z","currency":"USD","delinquent":false,"balance":0,"livemode":false},
+    {"id":"cus_demo_acme","name":"Acme Logistics","email":"ops@acme.example","createdAt":"2026-04-11T09:00:00Z","currency":"USD","delinquent":false,"balance":0,"livemode":false}
+  ]'::jsonb,
+  '[
+    {"id":"pi_demo_1","amount":640000,"amountReceived":640000,"currency":"USD","status":"succeeded","customer":"cus_demo_northstar","createdAt":"2026-09-22T10:00:00Z","canceledAt":null,"paymentMethodTypes":["card","us_bank_account"],"description":"Northstar enterprise expansion","latestCharge":"ch_demo_1"},
+    {"id":"pi_demo_2","amount":180000,"amountReceived":180000,"currency":"USD","status":"succeeded","customer":"cus_demo_zest","createdAt":"2026-09-24T10:00:00Z","canceledAt":null,"paymentMethodTypes":["card"],"description":"Zest Foods rollout","latestCharge":"ch_demo_2"},
+    {"id":"pi_demo_3","amount":420000,"amountReceived":0,"currency":"USD","status":"requires_payment_method","customer":"cus_demo_helio","createdAt":"2026-09-25T10:00:00Z","canceledAt":null,"paymentMethodTypes":["card"],"description":"Helio Health platform invoice","latestCharge":null},
+    {"id":"pi_demo_4","amount":220000,"amountReceived":220000,"currency":"USD","status":"succeeded","customer":"cus_demo_acme","createdAt":"2026-09-20T10:00:00Z","canceledAt":null,"paymentMethodTypes":["us_bank_account"],"description":"Acme renewal","latestCharge":"ch_demo_4"}
+  ]'::jsonb,
+  '[
+    {"id":"sub_demo_1","status":"active","customer":"cus_demo_northstar","createdAt":"2026-04-02T09:00:00Z","currentPeriodStart":"2026-09-01T00:00:00Z","currentPeriodEnd":"2026-10-01T00:00:00Z","cancelAtPeriodEnd":false,"canceledAt":null,"mrr":53000,"currency":"USD","collectionMethod":"charge_automatically"},
+    {"id":"sub_demo_2","status":"active","customer":"cus_demo_zest","createdAt":"2026-06-22T09:00:00Z","currentPeriodStart":"2026-09-01T00:00:00Z","currentPeriodEnd":"2026-10-01T00:00:00Z","cancelAtPeriodEnd":false,"canceledAt":null,"mrr":15000,"currency":"USD","collectionMethod":"send_invoice"},
+    {"id":"sub_demo_3","status":"trialing","customer":"cus_demo_helio","createdAt":"2026-09-01T09:00:00Z","currentPeriodStart":"2026-09-01T00:00:00Z","currentPeriodEnd":"2026-10-01T00:00:00Z","cancelAtPeriodEnd":true,"canceledAt":null,"mrr":35000,"currency":"USD","collectionMethod":"send_invoice"}
+  ]'::jsonb,
+  '[
+    {"id":"in_demo_1","number":"TAI-2026-091","customer":"cus_demo_northstar","customerName":"Northstar Bank","customerEmail":"finance@northstar.example","status":"paid","amountDue":640000,"amountPaid":640000,"amountRemaining":0,"total":640000,"currency":"USD","createdAt":"2026-09-22T10:00:00Z","dueDate":"2026-09-29T00:00:00Z","paidAt":"2026-09-22T11:00:00Z","hostedInvoiceUrl":""},
+    {"id":"in_demo_2","number":"TAI-2026-092","customer":"cus_demo_helio","customerName":"Helio Health","customerEmail":"ap@helio.example","status":"open","amountDue":420000,"amountPaid":0,"amountRemaining":420000,"total":420000,"currency":"USD","createdAt":"2026-09-10T10:00:00Z","dueDate":"2026-09-25T00:00:00Z","paidAt":null,"hostedInvoiceUrl":""},
+    {"id":"in_demo_3","number":"TAI-2026-093","customer":"cus_demo_zest","customerName":"Zest Foods","customerEmail":"billing@zest.example","status":"paid","amountDue":180000,"amountPaid":180000,"amountRemaining":0,"total":180000,"currency":"USD","createdAt":"2026-09-24T10:00:00Z","dueDate":"2026-09-30T00:00:00Z","paidAt":"2026-09-24T12:00:00Z","hostedInvoiceUrl":""},
+    {"id":"in_demo_4","number":"TAI-2026-094","customer":"cus_demo_acme","customerName":"Acme Logistics","customerEmail":"ops@acme.example","status":"paid","amountDue":220000,"amountPaid":220000,"amountRemaining":0,"total":220000,"currency":"USD","createdAt":"2026-09-20T10:00:00Z","dueDate":"2026-09-27T00:00:00Z","paidAt":"2026-09-20T13:00:00Z","hostedInvoiceUrl":""}
+  ]'::jsonb,
+  '{"available":[{"amount":4320000,"currency":"USD","sourceTypes":{"card":2100000,"bank_account":2220000}}],"pending":[{"amount":610000,"currency":"USD","sourceTypes":{"card":290000,"bank_account":320000}}],"availableTotal":4320000,"pendingTotal":610000}'::jsonb,
+  '{"totalCustomers":4,"delinquentCustomers":1,"totalPaymentIntents":4,"successfulPayments":3,"failedPayments":1,"totalPaymentVolume":1040000,"availableBalance":4320000,"pendingBalance":610000,"activeSubscriptions":2,"trialingSubscriptions":1,"canceledSubscriptions":0,"mrr":103000,"openInvoices":1,"overdueInvoices":1,"paidInvoices":3,"totalInvoiceAmount":1460000,"paymentStatusBreakdown":[{"name":"succeeded","count":3},{"name":"requires_payment_method","count":1}],"subscriptionStatusBreakdown":[{"name":"active","count":2},{"name":"trialing","count":1}],"invoiceStatusBreakdown":[{"name":"paid","count":3},{"name":"open","count":1}],"revenueByCurrency":[{"name":"USD","amount":1040000}],"topInvoices":[{"id":"in_demo_1","number":"TAI-2026-091","customerName":"Northstar Bank","status":"paid","amountDue":640000,"amountRemaining":0,"total":640000,"currency":"USD","dueDate":"2026-09-29T00:00:00Z"},{"id":"in_demo_2","number":"TAI-2026-092","customerName":"Helio Health","status":"open","amountDue":420000,"amountRemaining":420000,"total":420000,"currency":"USD","dueDate":"2026-09-25T00:00:00Z"},{"id":"in_demo_4","number":"TAI-2026-094","customerName":"Acme Logistics","status":"paid","amountDue":220000,"amountRemaining":0,"total":220000,"currency":"USD","dueDate":"2026-09-27T00:00:00Z"}],"topRisks":[{"id":"in_demo_2","title":"Helio Health","detail":"Invoice TAI-2026-092 is overdue.","riskType":"Overdue invoice","value":420000},{"id":"cus_demo_helio","title":"Helio Health","detail":"ap@helio.example","riskType":"Delinquent customer","value":42000},{"id":"sub_demo_3","title":"cus_demo_helio","detail":"Subscription is set to cancel at period end.","riskType":"Subscription churn","value":35000}]}'::jsonb,
+  '{"source":"stripe","accountName":"TAI Chief Payments","syncedAt":"2026-09-30T19:00:00Z"}'::jsonb
 );
 
 insert into public.department_embeddings (

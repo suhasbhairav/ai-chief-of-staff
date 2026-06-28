@@ -16,7 +16,7 @@ For a full demo workspace, run the seed file after the schema:
 -- paste supabase/seed-demo.sql here
 ```
 
-The seed resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, history, board memos, Slack, Notion, HubSpot, Linear, ClickUp, Jira, Confluence, GitHub, Asana, Mailchimp, QuickBooks, Salesforce, and vector search rows.
+The seed resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, history, board memos, Slack, Notion, HubSpot, Linear, ClickUp, Jira, Confluence, GitHub, Asana, Mailchimp, QuickBooks, Salesforce, Stripe, and vector search rows.
 
 The schema stores each department upload in `department_snapshots` with flexible `jsonb` columns:
 
@@ -48,6 +48,7 @@ Additional operating-system tables:
 - `mailchimp_marketing_snapshots`: synced Mailchimp audiences, campaigns, reports, engagement, unsubscribes, bounces, and CEO marketing summaries.
 - `quickbooks_accounting_snapshots`: synced QuickBooks chart of accounts, accounting reports, balances, receivables, payables, and CEO finance summaries.
 - `salesforce_crm_snapshots`: synced Salesforce accounts, opportunities, leads, pipeline, forecast, owner load, and CEO revenue summaries.
+- `stripe_payments_snapshots`: synced Stripe customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, and CEO billing risk summaries.
 
 ## 2. Environment Variables
 
@@ -88,6 +89,7 @@ QUICKBOOKS_REFRESH_TOKEN=your-oauth-refresh-token-optional
 SALESFORCE_INSTANCE_URL=https://your-domain.my.salesforce.com
 SALESFORCE_ACCESS_TOKEN=your-salesforce-oauth-access-token
 SALESFORCE_API_VERSION=v61.0
+STRIPE_SECRET_KEY=your-stripe-secret-or-restricted-key
 ```
 
 The app uses the Supabase key only in Next.js route handlers. Do not expose the service role key in browser code.
@@ -114,7 +116,8 @@ The default embedding model produces 1536-dimensional vectors, matching `departm
 17. Mailchimp audiences, campaigns, and reports sync through `/api/mailchimp/overview` into `mailchimp_marketing_snapshots`.
 18. QuickBooks accounts and accounting reports sync through `/api/quickbooks/overview` into `quickbooks_accounting_snapshots`.
 19. Salesforce accounts, opportunities, and leads sync through `/api/salesforce/overview` into `salesforce_crm_snapshots`.
-20. Board memo exports save memo metadata through `/api/board-memos`.
-21. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+20. Stripe customers, payments, subscriptions, invoices, and balances sync through `/api/stripe/overview` into `stripe_payments_snapshots`.
+21. Board memo exports save memo metadata through `/api/board-memos`.
+22. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
 
 Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.

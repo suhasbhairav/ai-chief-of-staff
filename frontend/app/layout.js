@@ -148,6 +148,12 @@ export default function RootLayout({ children }) {
                       icon: "☁️",
                     },
                     {
+                      id: "stripe",
+                      name: "Stripe Payments",
+                      href: "/stripe",
+                      icon: "💳",
+                    },
+                    {
                       id: "todo",
                       name: "Master To-Do",
                       href: "/todo",

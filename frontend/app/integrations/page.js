@@ -51,6 +51,8 @@ function IntegrationsPageContent() {
   const [salesforceAccessToken, setSalesforceAccessToken] = useState("");
   const [salesforceApiVersion, setSalesforceApiVersion] = useState("v61.0");
   const [showSalesforceForm, setShowSalesforceForm] = useState(false);
+  const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [showStripeForm, setShowStripeForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -618,6 +620,44 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleStripeSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripeSecretKey.trim()) {
+      setApiError("Stripe secret key is required.");
+      return;
+    }
+
+    setConnectingId("stripe");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stripe: {
+            secret_key: stripeSecretKey.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Stripe connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Stripe Payments connected successfully.");
+      setStripeSecretKey("");
+      setShowStripeForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Stripe");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -716,6 +756,11 @@ function IntegrationsPageContent() {
       description: "Sync Salesforce accounts, opportunities, leads, owners, stages, forecast categories, and CRM risk for CEO revenue inspection.",
       color: "from-sky-500/15 to-[#121214]",
       iconBg: "bg-sky-500/10 text-sky-200",
+    },
+    stripe: {
+      description: "Sync Stripe customers, payments, subscriptions, invoices, and balances for CEO-level revenue, cash, billing, and churn-risk intelligence.",
+      color: "from-fuchsia-500/15 to-[#121214]",
+      iconBg: "bg-fuchsia-500/10 text-fuchsia-100",
     }
   };
 
@@ -771,6 +816,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with QuickBooks Online and validating company access..."
                 : connectingId === "salesforce"
                   ? "Connecting with Salesforce REST API and validating CRM access..."
+                : connectingId === "stripe"
+                  ? "Connecting with Stripe API and validating payments access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -1316,6 +1363,36 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showStripeForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Stripe Payments</h3>
+              <button onClick={() => setShowStripeForm(false)} className="text-zinc-500 hover:text-white text-md font-bold">×</button>
+            </div>
+
+            <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-fuchsia-200">Stripe setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a restricted key or use a secret key from Stripe Developers.</li>
+                <li>Grant read access for customers, payment intents, subscriptions, invoices, balance, and account.</li>
+                <li>For production, prefer setting <code className="text-fuchsia-200">STRIPE_SECRET_KEY</code> in Vercel.</li>
+                <li>After connecting, open <code className="text-fuchsia-200">/stripe</code> and click <strong>Sync Stripe</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleStripeSubmit} className="space-y-4">
+              <input type="password" value={stripeSecretKey} onChange={(e) => setStripeSecretKey(e.target.value)} placeholder="sk_live_... or rk_live_..." className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500" required />
+
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button type="button" onClick={() => setShowStripeForm(false)} className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-xs font-semibold text-white transition-colors">Verify & Connect</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -1337,6 +1414,7 @@ function IntegrationsPageContent() {
           const isMailchimp = id === "mailchimp";
           const isQuickBooks = id === "quickbooks";
           const isSalesforce = id === "salesforce";
+          const isStripe = id === "stripe";
 
           return (
             <div
@@ -1455,6 +1533,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Org:</span> {info.organization_name || info.organization_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">Instance:</span> {info.instance_url || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">API:</span> {info.api_version || "v61.0"}</div>
+                  </div>
+                )}
+
+                {info.connected && isStripe && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Account:</span> {info.account_name || info.account_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Country:</span> {info.country || "Stripe account"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Currency:</span> {(info.default_currency || "usd").toUpperCase()}</div>
                   </div>
                 )}
               </div>
@@ -1578,6 +1664,13 @@ function IntegrationsPageContent() {
                     className="flex w-full items-center justify-center rounded-lg bg-sky-600 hover:bg-sky-500 py-2.5 text-xs font-semibold text-white transition-colors"
                   >
                     Connect Salesforce
+                  </button>
+                ) : isStripe ? (
+                  <button
+                    onClick={() => setShowStripeForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect Stripe
                   </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">

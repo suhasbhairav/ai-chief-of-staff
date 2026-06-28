@@ -133,6 +133,7 @@ export const readOrganizationSummary = async () => {
       "mailchimp-marketing.json",
       "quickbooks-accounting.json",
       "salesforce-crm.json",
+      "stripe-payments.json",
       "integrations.json"
     ];
 
@@ -603,6 +604,7 @@ const DEFAULT_INTEGRATIONS = {
   mailchimp: { connected: false, name: "Mailchimp Marketing", icon: "📬" },
   quickbooks: { connected: false, name: "QuickBooks Accounting", icon: "📗" },
   salesforce: { connected: false, name: "Salesforce CRM", icon: "☁️" },
+  stripe: { connected: false, name: "Stripe Payments", icon: "💳" },
 };
 
 export const readIntegrations = async () => {
@@ -1883,6 +1885,137 @@ export const writeSalesforceCrm = async ({
 
   if (error) {
     throw new Error(`Unable to save Salesforce CRM snapshot: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// STRIPE PAYMENTS / CUSTOMER / REVENUE STORE
+// ==========================================
+
+const DEFAULT_STRIPE_PAYMENTS_STORE = {
+  syncedAt: null,
+  accountId: null,
+  accountName: null,
+  customers: [],
+  paymentIntents: [],
+  subscriptions: [],
+  invoices: [],
+  balance: {},
+  summary: {
+    totalCustomers: 0,
+    delinquentCustomers: 0,
+    totalPaymentIntents: 0,
+    successfulPayments: 0,
+    failedPayments: 0,
+    totalPaymentVolume: 0,
+    availableBalance: 0,
+    pendingBalance: 0,
+    activeSubscriptions: 0,
+    trialingSubscriptions: 0,
+    canceledSubscriptions: 0,
+    mrr: 0,
+    openInvoices: 0,
+    overdueInvoices: 0,
+    paidInvoices: 0,
+    totalInvoiceAmount: 0,
+    paymentStatusBreakdown: [],
+    subscriptionStatusBreakdown: [],
+    invoiceStatusBreakdown: [],
+    revenueByCurrency: [],
+    topInvoices: [],
+    topRisks: [],
+  },
+};
+
+export const readStripePayments = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const stripePath = path.join(dir, "stripe-payments.json");
+    if (!fs.existsSync(stripePath)) return DEFAULT_STRIPE_PAYMENTS_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(stripePath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read stripe-payments.json:", error);
+      return DEFAULT_STRIPE_PAYMENTS_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("stripe_payments_snapshots")
+    .select("account_id, account_name, synced_at, customers, payment_intents, subscriptions, invoices, balance, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Stripe payments snapshot: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_STRIPE_PAYMENTS_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    accountId: data.account_id,
+    accountName: data.account_name,
+    customers: data.customers || [],
+    paymentIntents: data.payment_intents || [],
+    subscriptions: data.subscriptions || [],
+    invoices: data.invoices || [],
+    balance: data.balance || {},
+    summary: data.summary || DEFAULT_STRIPE_PAYMENTS_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeStripePayments = async ({
+  accountId,
+  accountName,
+  customers,
+  paymentIntents,
+  subscriptions,
+  invoices,
+  balance,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    accountId: accountId || null,
+    accountName: accountName || null,
+    customers: Array.isArray(customers) ? customers : [],
+    paymentIntents: Array.isArray(paymentIntents) ? paymentIntents : [],
+    subscriptions: Array.isArray(subscriptions) ? subscriptions : [],
+    invoices: Array.isArray(invoices) ? invoices : [],
+    balance: balance || {},
+    summary: summary || DEFAULT_STRIPE_PAYMENTS_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const stripePath = path.join(dir, "stripe-payments.json");
+    fs.writeFileSync(stripePath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("stripe_payments_snapshots").insert({
+    account_id: store.accountId,
+    account_name: store.accountName,
+    synced_at: store.syncedAt,
+    customers: store.customers,
+    payment_intents: store.paymentIntents,
+    subscriptions: store.subscriptions,
+    invoices: store.invoices,
+    balance: store.balance,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Stripe payments snapshot: ${error.message}`);
   }
 
   return store;

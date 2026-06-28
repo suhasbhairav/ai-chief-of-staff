@@ -13,6 +13,7 @@ import { validateAsanaToken } from "@/lib/asana/server";
 import { validateMailchimpToken } from "@/lib/mailchimp/server";
 import { validateQuickBooksCredentials } from "@/lib/quickbooks/server";
 import { validateSalesforceToken } from "@/lib/salesforce/server";
+import { validateStripeKey } from "@/lib/stripe/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -187,6 +188,14 @@ const sanitizeIntegrations = (integrations) => ({
         ),
       }
     : integrations?.salesforce,
+  stripe: integrations?.stripe
+    ? {
+        ...integrations.stripe,
+        secret_key: undefined,
+        hasToken: Boolean(integrations.stripe.secret_key || process.env.STRIPE_SECRET_KEY),
+        connected: Boolean(integrations.stripe.connected || process.env.STRIPE_SECRET_KEY),
+      }
+    : integrations?.stripe,
 });
 
 export async function GET() {
@@ -220,6 +229,7 @@ export async function GET() {
       salesforceEnvConfigured: Boolean(
         process.env.SALESFORCE_INSTANCE_URL && process.env.SALESFORCE_ACCESS_TOKEN
       ),
+      stripeEnvConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -684,6 +694,41 @@ export async function POST(request) {
         ...current.salesforce,
         ...payload.salesforce,
         access_token: current.salesforce.access_token,
+      };
+    }
+
+    if (payload.stripe?.secret_key) {
+      try {
+        const account = await validateStripeKey(payload.stripe.secret_key.trim());
+        payload.stripe = {
+          connected: true,
+          name: "Stripe Payments",
+          icon: "💳",
+          secret_key: payload.stripe.secret_key.trim(),
+          account_id: account.id,
+          account_name: account.displayName,
+          country: account.country,
+          default_currency: account.defaultCurrency,
+          email: account.email,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Stripe validation failed: ${error.message}. Use a valid restricted or secret key with read access to customers, payments, subscriptions, invoices, balance, and account.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.stripe && payload.stripe.connected === false) {
+      payload.stripe = {
+        connected: false,
+        name: "Stripe Payments",
+        icon: "💳",
+      };
+    } else if (payload.stripe && !payload.stripe.secret_key && current.stripe?.secret_key) {
+      payload.stripe = {
+        ...current.stripe,
+        ...payload.stripe,
+        secret_key: current.stripe.secret_key,
       };
     }
     

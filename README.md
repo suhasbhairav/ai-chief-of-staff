@@ -28,6 +28,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="Mailchimp" src="https://img.shields.io/badge/Mailchimp-Marketing%20API-FFE01B?style=for-the-badge&logo=mailchimp" />
 <img alt="QuickBooks" src="https://img.shields.io/badge/QuickBooks-Accounting-2CA01C?style=for-the-badge&logo=quickbooks" />
 <img alt="Salesforce" src="https://img.shields.io/badge/Salesforce-CRM-00A1E0?style=for-the-badge&logo=salesforce" />
+<img alt="Stripe" src="https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -248,6 +249,7 @@ The product is designed around a simple idea: every important department should 
 | Mailchimp Marketing | Tracks audiences, campaigns, reports, open/click rates, unsubscribes, bounces, and email risk | Mailchimp Marketing API + Supabase |
 | QuickBooks Accounting | Tracks chart of accounts, cash, A/R, A/P, income, expenses, reports, and finance risk | QuickBooks Online Accounting API + Supabase |
 | Salesforce CRM | Tracks accounts, opportunities, leads, pipeline, forecast, owner load, and revenue risk | Salesforce REST API + Supabase |
+| Stripe Payments | Tracks customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, and billing risk | Stripe API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -309,6 +311,7 @@ ai-chief-of-staff/
       mailchimp/page.js                    # Mailchimp CEO marketing overview
       quickbooks/page.js                   # QuickBooks CEO accounting overview
       salesforce/page.js                   # Salesforce CEO CRM overview
+      stripe/page.js                       # Stripe CEO payments overview
       api/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
@@ -324,6 +327,7 @@ ai-chief-of-staff/
         mailchimp/overview/route.js        # Mailchimp audience/campaign/report sync and store
         quickbooks/overview/route.js       # QuickBooks account/report sync and store
         salesforce/overview/route.js       # Salesforce account/opportunity/lead sync and store
+        stripe/overview/route.js           # Stripe payments/customer/subscription sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -376,6 +380,7 @@ flowchart LR
   Y[Mailchimp Marketing API] --> Z[Mailchimp Marketing Snapshot]
   AA[QuickBooks Online API] --> AB[QuickBooks Accounting Snapshot]
   AC[Salesforce REST API] --> AD[Salesforce CRM Snapshot]
+  AE[Stripe API] --> AF[Stripe Payments Snapshot]
   R --> G
   T --> G
   V --> G
@@ -403,6 +408,7 @@ flowchart LR
 16. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
 17. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
 18. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
+19. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
 
 ---
 
@@ -428,6 +434,7 @@ Primary tables:
 | `mailchimp_marketing_snapshots` | Synced Mailchimp audiences, campaigns, reports, engagement, unsubscribes, bounces, and summaries |
 | `quickbooks_accounting_snapshots` | Synced QuickBooks chart of accounts, reports, balances, receivables, payables, and summaries |
 | `salesforce_crm_snapshots` | Synced Salesforce accounts, opportunities, leads, pipeline, forecast, owner load, and summaries |
+| `stripe_payments_snapshots` | Synced Stripe customers, payments, subscriptions, invoices, balances, MRR, and billing risk summaries |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -435,7 +442,7 @@ Primary tables:
 Run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor before starting the app.
 The schema enables `pgvector` and exposes `match_department_embeddings` for cosine-similarity search.
 
-For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, Mailchimp campaigns, QuickBooks accounting, Salesforce CRM, board memos, historical imports, and vector search.
+For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) after the schema. It resets TAI Chief application tables and loads two quarters of demo data from April 2026 through September 2026 across departments, integrations, GitHub engineering queues, Asana work queues, Mailchimp campaigns, QuickBooks accounting, Salesforce CRM, Stripe payments, board memos, historical imports, and vector search.
 
 ---
 
@@ -756,6 +763,23 @@ The Salesforce overview stores syncs in `salesforce_crm_snapshots` and tracks ac
 
 ---
 
+## Stripe Payments
+
+This is a real Stripe API integration for CEOs who need payment, subscription, invoice, and cash visibility beside CRM and accounting.
+
+1. Create a Stripe restricted key or use a server-side secret key.
+2. Grant read access for account, customers, payment intents, subscriptions, invoices, and balance.
+3. Add the key in Vercel as `STRIPE_SECRET_KEY`, or connect Stripe manually from `/integrations`.
+4. Open `/stripe` and click `Sync Stripe`.
+
+```bash
+STRIPE_SECRET_KEY=sk_live_or_rk_live_key
+```
+
+The Stripe overview stores syncs in `stripe_payments_snapshots` and tracks customer count, delinquent customers, payment volume, failed payments, MRR, subscriptions, open invoices, overdue invoices, Stripe balance, revenue by currency, and CEO billing risk queue.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -832,6 +856,7 @@ QUICKBOOKS_REFRESH_TOKEN=your_oauth_refresh_token_optional
 SALESFORCE_INSTANCE_URL=https://your-domain.my.salesforce.com
 SALESFORCE_ACCESS_TOKEN=your_salesforce_oauth_access_token
 SALESFORCE_API_VERSION=v61.0
+STRIPE_SECRET_KEY=your_stripe_secret_or_restricted_key
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
@@ -974,6 +999,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /mailchimp                       Mailchimp CEO marketing overview
 /quickbooks                      QuickBooks CEO accounting overview
 /salesforce                      Salesforce CEO CRM overview
+/stripe                          Stripe CEO payments overview
 /sign-in                         Clerk sign-in
 /sign-up                         Clerk sign-up
 /api/current-data                 Supabase JSONB store
@@ -993,6 +1019,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/mailchimp/overview          Mailchimp audience/campaign/report sync endpoint
 /api/quickbooks/overview         QuickBooks account/report sync endpoint
 /api/salesforce/overview         Salesforce account/opportunity/lead sync endpoint
+/api/stripe/overview             Stripe payments/customer/subscription sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/slack/authorize Slack OAuth start
