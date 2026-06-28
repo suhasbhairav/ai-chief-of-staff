@@ -16,6 +16,7 @@ Turn every department's metrics into board-ready decisions, Slack-aware action t
 <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs" />
 <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3ecf8e?style=for-the-badge&logo=supabase" />
 <img alt="Slack" src="https://img.shields.io/badge/Slack-live%20integration-4A154B?style=for-the-badge&logo=slack" />
+<img alt="Notion" src="https://img.shields.io/badge/Notion-OKRs-black?style=for-the-badge&logo=notion" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
 
 <br />
@@ -111,6 +112,15 @@ The product is designed around a simple idea: every important department should 
       <p>Chat about any department, retrieve Supabase vector evidence, and escalate to guarded OpenAI synthesis only when the CEO asks.</p>
       <p><strong>Output:</strong> grounded operating answers.</p>
     </td>
+    <td width="33%" valign="top" bgcolor="#E0F2FE">
+      <h3>Notion Product OKRs</h3>
+      <p>
+        <img src="https://img.shields.io/badge/Notion-111827?style=flat-square&logo=notion" />
+        <img src="https://img.shields.io/badge/Product%20OKRs-0284C7?style=flat-square" />
+      </p>
+      <p>Sync a real Notion OKR database into Product to track objectives, key results, owners, progress, status, risk, and due dates.</p>
+      <p><strong>Output:</strong> live product execution scorecard.</p>
+    </td>
     <td width="33%" valign="top" bgcolor="#DDD6FE">
       <h3>Historical Trend Imports</h3>
       <p>
@@ -120,6 +130,8 @@ The product is designed around a simple idea: every important department should 
       <p>Every CSV upload is appended to an immutable Supabase import ledger for multi-period analysis.</p>
       <p><strong>Output:</strong> historical data trail.</p>
     </td>
+  </tr>
+  <tr>
     <td width="33%" valign="top" bgcolor="#BAE6FD">
       <h3>PDF Reports</h3>
       <p>
@@ -153,6 +165,7 @@ The product is designed around a simple idea: every important department should 
 | Department dashboards | Calculates KPI cards and charts from uploaded CSVs | Browser CSV parser + Supabase |
 | AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
 | CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
+| Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
@@ -205,6 +218,7 @@ ai-chief-of-staff/
         analytics/[department]/route.js    # Guarded OpenAI recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
         embeddings/rebuild/route.js        # Backfill vector memory
+        notion/okrs/route.js               # Notion OKR sync and store
         current-data/route.js              # Supabase JSONB current store
         historical-data/route.js           # Historical trend import ledger
         board-memos/route.js               # Board memo persistence
@@ -273,6 +287,7 @@ Primary tables:
 | `department_snapshot_history` | Immutable historical import ledger |
 | `board_memos` | Saved board memo metadata and JSON content |
 | `department_embeddings` | pgvector chunks for CEO chat and department retrieval |
+| `notion_okr_snapshots` | Synced Notion Product OKR snapshots |
 | `slack_installations` | Active Slack workspace installs and bot tokens |
 | `slack_events` | Signed Slack Events API webhook ledger |
 | `slack_message_snapshots` | Slack channel/DM message snapshots |
@@ -363,6 +378,36 @@ After install, open `/integrations` and connect Slack. Then use `/slack` for the
 
 ---
 
+## Notion Product OKRs
+
+This is a real Notion integration for Product OKR tracking.
+
+1. Create a Notion internal integration.
+2. Copy the integration secret.
+3. Share your Product OKR database with that integration.
+4. Copy the database ID from the Notion database URL.
+5. Add the values in Vercel env vars or connect manually from `/integrations`.
+6. Open `/departments/product` and click `Sync Notion OKRs`.
+
+Recommended database properties:
+
+```text
+Objective
+Key Result
+Owner
+Status
+Progress
+Quarter
+Due Date
+Department
+Priority
+Confidence
+```
+
+The parser is flexible and also recognizes common variants like `Name`, `KR`, `DRI`, `State`, `% Complete`, `Cycle`, and `Target Date`.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -411,6 +456,8 @@ NEXT_PUBLIC_APP_URL=https://your-app-domain.com
 SLACK_CLIENT_ID=your_slack_client_id
 SLACK_CLIENT_SECRET=your_slack_client_secret
 SLACK_SIGNING_SECRET=your_slack_signing_secret
+NOTION_API_KEY=your_notion_internal_integration_secret
+NOTION_OKR_DATABASE_ID=your_product_okr_database_id
 ```
 
 Do not commit real `.env` files. They are ignored by `.gitignore`.
@@ -537,6 +584,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /api/analytics/[department]       Guarded OpenAI analysis endpoint
 /api/ceo-chat                    Retrieval planner and CEO answer agent
 /api/embeddings/rebuild          Supabase vector memory backfill
+/api/notion/okrs                 Notion Product OKR sync endpoint
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint

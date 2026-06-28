@@ -122,6 +122,7 @@ export const readOrganizationSummary = async () => {
       "history.json",
       "board-memos.json",
       "todo-list.json",
+      "notion-okrs.json",
       "integrations.json"
     ];
 
@@ -581,7 +582,7 @@ export const writeTodoList = async (todoStore) => {
 const DEFAULT_INTEGRATIONS = {
   slack: { connected: false, name: "Slack", icon: "💬" },
   gmail: { connected: false, name: "Gmail & Calendar", icon: "📧" },
-  notion: { connected: false, name: "Notion", icon: "📓" },
+  notion: { connected: false, name: "Notion OKRs", icon: "📓" },
 };
 
 export const readIntegrations = async () => {
@@ -706,4 +707,89 @@ export const writeIntegrations = async (integrations) => {
     console.error("Failed to write integrations to Supabase:", err);
   }
   return integrations;
+};
+
+// ==========================================
+// NOTION OKR STORE
+// ==========================================
+
+const DEFAULT_NOTION_OKR_STORE = {
+  syncedAt: null,
+  databaseId: null,
+  okrs: [],
+  summary: {
+    total: 0,
+    avgProgress: null,
+    atRisk: 0,
+    completed: 0,
+    owners: 0,
+  },
+};
+
+export const readNotionOkrs = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const okrPath = path.join(dir, "notion-okrs.json");
+    if (!fs.existsSync(okrPath)) return DEFAULT_NOTION_OKR_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(okrPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read notion-okrs.json:", error);
+      return DEFAULT_NOTION_OKR_STORE;
+    }
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("notion_okr_snapshots")
+    .select("database_id, synced_at, okrs, summary, content")
+    .order("synced_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to read Notion OKRs: ${error.message}`);
+  }
+
+  if (!data) return DEFAULT_NOTION_OKR_STORE;
+
+  return {
+    syncedAt: data.synced_at,
+    databaseId: data.database_id,
+    okrs: data.okrs || [],
+    summary: data.summary || DEFAULT_NOTION_OKR_STORE.summary,
+    content: data.content || {},
+  };
+};
+
+export const writeNotionOkrs = async ({ databaseId, okrs, summary }) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    databaseId,
+    okrs: Array.isArray(okrs) ? okrs : [],
+    summary: summary || DEFAULT_NOTION_OKR_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const okrPath = path.join(dir, "notion-okrs.json");
+    fs.writeFileSync(okrPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("notion_okr_snapshots").insert({
+    database_id: databaseId,
+    synced_at: store.syncedAt,
+    okrs: store.okrs,
+    summary: store.summary,
+    content: store,
+  });
+
+  if (error) {
+    throw new Error(`Unable to save Notion OKRs: ${error.message}`);
+  }
+
+  return store;
 };

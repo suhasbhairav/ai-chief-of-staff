@@ -9,6 +9,9 @@ function IntegrationsPageContent() {
   const [connectingId, setConnectingId] = useState(null);
   const [manualToken, setManualToken] = useState("");
   const [showManualForm, setShowManualForm] = useState(false);
+  const [notionApiKey, setNotionApiKey] = useState("");
+  const [notionDatabaseId, setNotionDatabaseId] = useState("");
+  const [showNotionForm, setShowNotionForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -89,6 +92,51 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleNotionSubmit = async (e) => {
+    e.preventDefault();
+    if (!notionApiKey.trim().startsWith("secret_") && !notionApiKey.trim().startsWith("ntn_")) {
+      setApiError("Invalid Notion secret. Use an Internal Integration Secret from Notion.");
+      return;
+    }
+    if (!notionDatabaseId.trim()) {
+      setApiError("Notion OKR database ID is required.");
+      return;
+    }
+
+    setConnectingId("notion");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notion: {
+            api_key: notionApiKey.trim(),
+            database_id: notionDatabaseId.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Notion connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Notion OKR database connected successfully.");
+      setNotionApiKey("");
+      setNotionDatabaseId("");
+      setShowNotionForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Notion");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -134,9 +182,9 @@ function IntegrationsPageContent() {
       iconBg: "bg-red-500/10 text-red-400",
     },
     notion: {
-      description: "Index your product wikis, sprint roadmaps, and meeting transcripts. Aegis learns company strategies and maps owners automatically without manual tagging.",
-      color: "from-zinc-500/20 to-[#121214]",
-      iconBg: "bg-zinc-700/20 text-zinc-100",
+      description: "Sync live Product OKRs from a real Notion database, track owners, progress, risk, due dates, and objective health inside the Product dashboard.",
+      color: "from-sky-500/15 to-[#121214]",
+      iconBg: "bg-sky-500/10 text-sky-200",
     }
   };
 
@@ -169,7 +217,11 @@ function IntegrationsPageContent() {
           <div className="w-full max-w-md rounded-2xl border border-indigo-500/30 bg-[#0f0f12] p-8 text-center shadow-2xl">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
             <h3 className="text-md font-semibold text-white">Verifying API Credentials...</h3>
-            <p className="text-xs text-zinc-500 mt-2">Connecting with Slack API and checking scopes...</p>
+            <p className="text-xs text-zinc-500 mt-2">
+              {connectingId === "notion"
+                ? "Connecting with Notion API and checking database access..."
+                : "Connecting with Slack API and checking scopes..."}
+            </p>
           </div>
         </div>
       )}
@@ -235,6 +287,73 @@ function IntegrationsPageContent() {
         </div>
       )}
 
+      {showNotionForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Notion OKR Database</h3>
+              <button 
+                onClick={() => setShowNotionForm(false)}
+                className="text-zinc-500 hover:text-white text-md font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-sky-300">Notion setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a Notion internal integration and copy the secret.</li>
+                <li>Open your OKR database, click <strong>Share</strong>, and invite the integration.</li>
+                <li>Copy the database ID from the database URL.</li>
+                <li>Recommended properties: <code className="text-sky-300">Objective</code>, <code className="text-sky-300">Key Result</code>, <code className="text-sky-300">Owner</code>, <code className="text-sky-300">Status</code>, <code className="text-sky-300">Progress</code>, <code className="text-sky-300">Quarter</code>, <code className="text-sky-300">Due Date</code>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleNotionSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Internal Integration Secret</label>
+                <input
+                  type="password"
+                  value={notionApiKey}
+                  onChange={(e) => setNotionApiKey(e.target.value)}
+                  placeholder="secret_... or ntn_..."
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">OKR Database ID</label>
+                <input
+                  type="text"
+                  value={notionDatabaseId}
+                  onChange={(e) => setNotionDatabaseId(e.target.value)}
+                  placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowNotionForm(false)}
+                  className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition-colors"
+                >
+                  Verify & Connect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Grid List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(integrations).map(([id, info]) => {
@@ -245,6 +364,7 @@ function IntegrationsPageContent() {
           };
 
           const isSlack = id === "slack";
+          const isNotion = id === "notion";
 
           return (
             <div
@@ -281,12 +401,19 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Bot ID:</span> {info.bot_user_id}</div>
                   </div>
                 )}
+
+                {info.connected && isNotion && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Database:</span> {info.database_title || "OKR Database"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Database ID:</span> {info.database_id || "Configured in env"}</div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 border-t border-[#27272a] pt-4">
                 {info.connected ? (
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-zinc-500 uppercase font-semibold tracking-wider">Slack API: Active</span>
+                    <span className="text-[10px] text-zinc-500 uppercase font-semibold tracking-wider">{info.name}: Active</span>
                     <button
                       onClick={() => handleDisconnect(id)}
                       className="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
@@ -318,6 +445,13 @@ function IntegrationsPageContent() {
                       Or paste bot token manually
                     </button>
                   </div>
+                ) : isNotion ? (
+                  <button
+                    onClick={() => setShowNotionForm(true)}
+                    className="flex w-full items-center justify-center rounded-lg bg-sky-600 hover:bg-sky-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                  >
+                    Connect Notion OKRs
+                  </button>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">
                     Coming soon for non-sandbox environments.

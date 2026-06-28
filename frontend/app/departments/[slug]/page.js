@@ -399,6 +399,19 @@ const saveBoardMemo = async (memo) => {
   return data;
 };
 
+const fetchNotionOkrs = async ({ sync = false } = {}) => {
+  const response = await fetch("/api/notion/okrs", {
+    method: sync ? "POST" : "GET",
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to load Notion OKRs.");
+  }
+
+  return data;
+};
+
 const formatDateTime = (value) => {
   if (!value) return "Not uploaded";
   return new Intl.DateTimeFormat("en", {
@@ -738,6 +751,10 @@ export default function DepartmentPage() {
   const [historicalImports, setHistoricalImports] = useState([]);
   const [exportingBoardMemo, setExportingBoardMemo] = useState(false);
   const [orgDataStore, setOrgDataStore] = useState({});
+  const [notionOkrStore, setNotionOkrStore] = useState(null);
+  const [loadingNotionOkrs, setLoadingNotionOkrs] = useState(false);
+  const [syncingNotionOkrs, setSyncingNotionOkrs] = useState(false);
+  const [notionOkrError, setNotionOkrError] = useState("");
   const [insights, setInsights] = useState(
     isExecutiveDashboard
       ? "Click Fetch Suggestions to generate an organization-wide CEO brief from uploaded department data."
@@ -791,6 +808,25 @@ export default function DepartmentPage() {
         });
     });
   }, [departmentId, isExecutiveDashboard]);
+
+  useEffect(() => {
+    if (departmentId !== "product") {
+      return;
+    }
+
+    queueMicrotask(() => {
+      setLoadingNotionOkrs(true);
+      fetchNotionOkrs()
+        .then((store) => {
+          setNotionOkrStore(store);
+          setNotionOkrError("");
+        })
+        .catch((error) => {
+          setNotionOkrError(error instanceof Error ? error.message : "Unable to load Notion OKRs.");
+        })
+        .finally(() => setLoadingNotionOkrs(false));
+    });
+  }, [departmentId]);
 
   const fetchInsights = useCallback(async (targetDepartmentId = departmentId) => {
     if (!targetDepartmentId || !DEPT_CONFIGS[targetDepartmentId]) {
@@ -927,6 +963,19 @@ export default function DepartmentPage() {
     }
   };
 
+  const handleSyncNotionOkrs = async () => {
+    setSyncingNotionOkrs(true);
+    setNotionOkrError("");
+    try {
+      const store = await fetchNotionOkrs({ sync: true });
+      setNotionOkrStore(store);
+    } catch (error) {
+      setNotionOkrError(error instanceof Error ? error.message : "Unable to sync Notion OKRs.");
+    } finally {
+      setSyncingNotionOkrs(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300 sm:space-y-8">
       {/* Header Context Bar */}
@@ -985,6 +1034,98 @@ export default function DepartmentPage() {
           </div>
         ))}
       </div>
+
+      {departmentId === "product" && (
+        <div className="rounded-xl border border-sky-500/25 bg-gradient-to-b from-sky-500/10 to-[#121214] p-4 sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-sky-200">Notion Product OKR Tracker</h3>
+              <p className="mt-1 text-xs text-zinc-400">
+                Syncs a real Notion OKR database into AICoS for product objective health, ownership, and risk tracking.
+              </p>
+            </div>
+            <button
+              onClick={handleSyncNotionOkrs}
+              disabled={syncingNotionOkrs}
+              className="inline-flex h-9 items-center justify-center rounded-md bg-sky-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {syncingNotionOkrs ? "Syncing Notion..." : "Sync Notion OKRs"}
+            </button>
+          </div>
+
+          {notionOkrError && (
+            <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-100">
+              {notionOkrError} Connect Notion in Integrations or set NOTION_API_KEY and NOTION_OKR_DATABASE_ID in Vercel.
+            </div>
+          )}
+
+          {loadingNotionOkrs ? (
+            <div className="rounded-lg border border-dashed border-sky-500/20 p-6 text-center text-xs text-zinc-500">
+              Loading Notion OKRs...
+            </div>
+          ) : notionOkrStore?.okrs?.length ? (
+            <div className="space-y-5">
+              <div className="grid gap-3 sm:grid-cols-5">
+                {[
+                  ["OKRs", notionOkrStore.summary?.total ?? notionOkrStore.okrs.length],
+                  ["Avg Progress", notionOkrStore.summary?.avgProgress === null ? "n/a" : `${notionOkrStore.summary?.avgProgress}%`],
+                  ["At Risk", notionOkrStore.summary?.atRisk ?? 0],
+                  ["Completed", notionOkrStore.summary?.completed ?? 0],
+                  ["Owners", notionOkrStore.summary?.owners ?? 0],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{label}</div>
+                    <div className="mt-1 text-lg font-semibold text-white">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] text-left text-xs">
+                  <thead className="border-b border-sky-500/20 text-zinc-500">
+                    <tr>
+                      <th className="py-2 pr-4 font-medium">Objective</th>
+                      <th className="py-2 pr-4 font-medium">Key Result</th>
+                      <th className="py-2 pr-4 font-medium">Owner</th>
+                      <th className="py-2 pr-4 font-medium">Status</th>
+                      <th className="py-2 pr-4 font-medium">Progress</th>
+                      <th className="py-2 pr-4 font-medium">Quarter</th>
+                      <th className="py-2 font-medium">Due</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#202024] text-zinc-300">
+                    {notionOkrStore.okrs.slice(0, 12).map((okr) => (
+                      <tr key={okr.id}>
+                        <td className="py-3 pr-4 font-medium text-zinc-100">{okr.objective}</td>
+                        <td className="py-3 pr-4 text-zinc-400">{okr.keyResult}</td>
+                        <td className="py-3 pr-4">{okr.owner}</td>
+                        <td className="py-3 pr-4">
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-zinc-300">
+                            {okr.status}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 text-sky-200">
+                          {typeof okr.progress === "number" ? `${okr.progress}%` : "n/a"}
+                        </td>
+                        <td className="py-3 pr-4 text-zinc-400">{okr.quarter}</td>
+                        <td className="py-3 text-zinc-400">{okr.dueDate || "n/a"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="text-[11px] text-zinc-500">
+                Last synced: {formatDateTime(notionOkrStore.syncedAt)}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-sky-500/20 p-6 text-center text-xs leading-5 text-zinc-500">
+              No Notion OKRs synced yet. Connect Notion in Integrations, share the OKR database with your integration, then click Sync Notion OKRs.
+            </div>
+          )}
+        </div>
+      )}
 
       {!isExecutiveDashboard && (
         <div className="rounded-xl border border-[#27272a] bg-[#121214] p-4 sm:p-5">
