@@ -55,6 +55,12 @@ function IntegrationsPageContent() {
   const [showStripeForm, setShowStripeForm] = useState(false);
   const [miroAccessToken, setMiroAccessToken] = useState("");
   const [showMiroForm, setShowMiroForm] = useState(false);
+  const [xeroAccessToken, setXeroAccessToken] = useState("");
+  const [xeroRefreshToken, setXeroRefreshToken] = useState("");
+  const [xeroClientId, setXeroClientId] = useState("");
+  const [xeroClientSecret, setXeroClientSecret] = useState("");
+  const [xeroTenantId, setXeroTenantId] = useState("");
+  const [showXeroForm, setShowXeroForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -84,6 +90,8 @@ function IntegrationsPageContent() {
       const clickupError = searchParams.get("clickup_error");
       const miroSuccess = searchParams.get("miro_success");
       const miroError = searchParams.get("miro_error");
+      const xeroSuccess = searchParams.get("xero_success");
+      const xeroError = searchParams.get("xero_error");
 
       if (slackSuccess) {
         setApiSuccess("Slack integrated successfully via OAuth!");
@@ -102,6 +110,12 @@ function IntegrationsPageContent() {
         setTimeout(() => setApiSuccess(""), 6000);
       } else if (miroError) {
         setApiError(`Miro integration failed: ${miroError}`);
+        setTimeout(() => setApiError(""), 8000);
+      } else if (xeroSuccess) {
+        setApiSuccess("Xero integrated successfully via OAuth!");
+        setTimeout(() => setApiSuccess(""), 6000);
+      } else if (xeroError) {
+        setApiError(`Xero integration failed: ${xeroError}`);
         setTimeout(() => setApiError(""), 8000);
       }
     });
@@ -710,6 +724,60 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleXeroOAuthConnect = () => {
+    window.location.href = "/api/integrations/xero/authorize";
+  };
+
+  const handleXeroSubmit = async (e) => {
+    e.preventDefault();
+    if (!xeroAccessToken.trim() && !xeroRefreshToken.trim()) {
+      setApiError("Xero access token or refresh token is required.");
+      return;
+    }
+    if (xeroRefreshToken.trim() && (!xeroClientId.trim() || !xeroClientSecret.trim())) {
+      setApiError("Client ID and client secret are required when using a Xero refresh token.");
+      return;
+    }
+
+    setConnectingId("xero");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          xero: {
+            access_token: xeroAccessToken.trim(),
+            refresh_token: xeroRefreshToken.trim(),
+            client_id: xeroClientId.trim(),
+            client_secret: xeroClientSecret.trim(),
+            tenant_id: xeroTenantId.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Xero connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Xero Accounting connected successfully.");
+      setXeroAccessToken("");
+      setXeroRefreshToken("");
+      setXeroClientId("");
+      setXeroClientSecret("");
+      setXeroTenantId("");
+      setShowXeroForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Xero");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -818,6 +886,11 @@ function IntegrationsPageContent() {
       description: "Sync Miro boards for collaboration visibility, stale strategy artifacts, owner concentration, sharing signals, and recently active boards.",
       color: "from-yellow-400/15 to-[#121214]",
       iconBg: "bg-yellow-400/10 text-yellow-100",
+    },
+    xero: {
+      description: "Sync Xero Accounting data for receivables, payables, contacts, invoices, bank transactions, account mix, and finance risk.",
+      color: "from-sky-500/15 to-[#121214]",
+      iconBg: "bg-sky-500/10 text-sky-200",
     }
   };
 
@@ -877,6 +950,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with Stripe API and validating payments access..."
                 : connectingId === "miro"
                   ? "Connecting with Miro REST API and validating board access..."
+                : connectingId === "xero"
+                  ? "Connecting with Xero Accounting API and validating tenant access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -1169,6 +1244,86 @@ function IntegrationsPageContent() {
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-xs font-semibold text-zinc-950 transition-colors"
+                >
+                  Verify & Connect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showXeroForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Xero Accounting</h3>
+              <button 
+                onClick={() => setShowXeroForm(false)}
+                className="text-zinc-500 hover:text-white text-md font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-sky-200">Xero setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a Xero OAuth 2.0 app and configure the callback URL.</li>
+                <li>Grant read scopes for accounting settings, contacts, and transactions.</li>
+                <li>Use OAuth or paste an access token. Tenant ID is optional; if omitted, TAI Chief uses the first connected tenant.</li>
+                <li>After connecting, open <code className="text-sky-200">/xero</code> and click <strong>Sync Xero</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleXeroSubmit} className="space-y-4">
+              <input
+                type="password"
+                value={xeroAccessToken}
+                onChange={(e) => setXeroAccessToken(e.target.value)}
+                placeholder="Xero OAuth access token"
+                className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              />
+              <input
+                type="password"
+                value={xeroRefreshToken}
+                onChange={(e) => setXeroRefreshToken(e.target.value)}
+                placeholder="Optional refresh token"
+                className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              />
+              <input
+                type="text"
+                value={xeroClientId}
+                onChange={(e) => setXeroClientId(e.target.value)}
+                placeholder="Client ID, required with refresh token"
+                className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              />
+              <input
+                type="password"
+                value={xeroClientSecret}
+                onChange={(e) => setXeroClientSecret(e.target.value)}
+                placeholder="Client secret, required with refresh token"
+                className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              />
+              <input
+                type="text"
+                value={xeroTenantId}
+                onChange={(e) => setXeroTenantId(e.target.value)}
+                placeholder="Optional Xero tenant ID"
+                className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              />
+              
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowXeroForm(false)}
+                  className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition-colors"
                 >
                   Verify & Connect
                 </button>
@@ -1531,6 +1686,7 @@ function IntegrationsPageContent() {
           const isSalesforce = id === "salesforce";
           const isStripe = id === "stripe";
           const isMiro = id === "miro";
+          const isXero = id === "xero";
 
           return (
             <div
@@ -1665,6 +1821,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Access:</span> boards:read</div>
                     <div><span className="text-zinc-600 font-semibold">Sample board:</span> {info.first_board_name || "Miro workspace"}</div>
                     <div><span className="text-zinc-600 font-semibold">Source:</span> {info.hasToken ? "Token configured" : "OAuth"}</div>
+                  </div>
+                )}
+
+                {info.connected && isXero && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Tenant:</span> {info.tenant_name || info.tenant_id || "Configured in env"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Scopes:</span> accounting read</div>
+                    <div><span className="text-zinc-600 font-semibold">Tenant ID:</span> {info.tenant_id || "Auto-discover"}</div>
                   </div>
                 )}
               </div>
@@ -1809,6 +1973,21 @@ function IntegrationsPageContent() {
                       className="text-center text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors py-1"
                     >
                       Or paste access token manually
+                    </button>
+                  </div>
+                ) : isXero ? (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={handleXeroOAuthConnect}
+                      className="flex w-full items-center justify-center rounded-lg bg-sky-600 hover:bg-sky-500 py-2.5 text-xs font-semibold text-white transition-colors"
+                    >
+                      Connect Xero OAuth
+                    </button>
+                    <button
+                      onClick={() => setShowXeroForm(true)}
+                      className="text-center text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors py-1"
+                    >
+                      Or paste token manually
                     </button>
                   </div>
                 ) : (

@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, Miro board intelligence, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, a company digital twin, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, Miro board intelligence, Xero accounting visibility, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, a company digital twin, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -28,6 +28,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="Asana" src="https://img.shields.io/badge/Asana-Work%20Management-F06A6A?style=for-the-badge&logo=asana" />
 <img alt="Mailchimp" src="https://img.shields.io/badge/Mailchimp-Marketing%20API-FFE01B?style=for-the-badge&logo=mailchimp" />
 <img alt="QuickBooks" src="https://img.shields.io/badge/QuickBooks-Accounting-2CA01C?style=for-the-badge&logo=quickbooks" />
+<img alt="Xero" src="https://img.shields.io/badge/Xero-Accounting-13B5EA?style=for-the-badge&logo=xero" />
 <img alt="Salesforce" src="https://img.shields.io/badge/Salesforce-CRM-00A1E0?style=for-the-badge&logo=salesforce" />
 <img alt="Stripe" src="https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe" />
 <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
@@ -264,6 +265,7 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
 | Asana Work Management | Tracks projects, tasks, owners, overdue work, due-soon work, stale execution, and delivery risk | Asana REST API + Supabase |
 | Mailchimp Marketing | Tracks audiences, campaigns, reports, open/click rates, unsubscribes, bounces, and email risk | Mailchimp Marketing API + Supabase |
 | QuickBooks Accounting | Tracks chart of accounts, cash, A/R, A/P, income, expenses, reports, and finance risk | QuickBooks Online Accounting API + Supabase |
+| Xero Accounting | Tracks organisations, accounts, contacts, invoices, bank transactions, receivables, payables, and finance risk | Xero Accounting API + Supabase summary JSON |
 | Salesforce CRM | Tracks accounts, opportunities, leads, pipeline, forecast, owner load, and revenue risk | Salesforce REST API + Supabase |
 | Stripe Payments | Tracks customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, and billing risk | Stripe API + Supabase |
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
@@ -328,6 +330,7 @@ ai-chief-of-staff/
       asana/page.js                        # Asana CEO work management overview
       mailchimp/page.js                    # Mailchimp CEO marketing overview
       quickbooks/page.js                   # QuickBooks CEO accounting overview
+      xero/page.js                         # Xero CEO accounting overview
       salesforce/page.js                   # Salesforce CEO CRM overview
       stripe/page.js                       # Stripe CEO payments overview
       api/
@@ -345,6 +348,7 @@ ai-chief-of-staff/
         asana/overview/route.js            # Asana project/task sync and store
         mailchimp/overview/route.js        # Mailchimp audience/campaign/report sync and store
         quickbooks/overview/route.js       # QuickBooks account/report sync and store
+        xero/overview/route.js             # Xero accounting sync and store
         salesforce/overview/route.js       # Salesforce account/opportunity/lead sync and store
         stripe/overview/route.js           # Stripe payments/customer/subscription sync and store
         current-data/route.js              # Supabase JSONB current store
@@ -401,6 +405,7 @@ flowchart LR
   AC[Salesforce REST API] --> AD[Salesforce CRM Snapshot]
   AE[Stripe API] --> AF[Stripe Payments Snapshot]
   AG[Miro REST API] --> AH[Miro Board Snapshot]
+  AI[Xero Accounting API] --> AJ[Xero Accounting Snapshot]
   R --> G
   T --> G
   V --> G
@@ -410,6 +415,7 @@ flowchart LR
   AD --> G
   AF --> G
   AH --> G
+  AJ --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -431,8 +437,9 @@ flowchart LR
 17. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
 18. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
 19. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
-20. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
-21. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
+20. Xero sync stores organisations, accounts, contacts, invoices, bank transactions, receivables, payables, and finance risk for CEO review.
+21. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
+22. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
 
 ---
 
@@ -768,6 +775,28 @@ The QuickBooks overview stores syncs in `quickbooks_accounting_snapshots` and tr
 
 ---
 
+## Xero Accounting
+
+This is a real Xero Accounting API integration for CEOs who want receivables, payables, invoices, contacts, bank transactions, and finance risk beside operating metrics.
+
+1. Create a Xero OAuth 2.0 app.
+2. Configure OAuth with this redirect URL: `https://your-app-domain.com/api/integrations/xero/callback`.
+3. Grant read scopes for accounting settings, contacts, and transactions.
+4. Add OAuth credentials in Vercel, or connect Xero manually from `/integrations`.
+5. Open `/xero` and click `Sync Xero`.
+
+```bash
+XERO_CLIENT_ID=your_xero_client_id
+XERO_CLIENT_SECRET=your_xero_client_secret
+XERO_ACCESS_TOKEN=optional_oauth_access_token
+XERO_REFRESH_TOKEN=optional_oauth_refresh_token
+XERO_TENANT_ID=optional_xero_tenant_id
+```
+
+The Xero overview stores syncs in local `xero-accounting.json` or Supabase organization summary JSON and tracks organisations, accounts, contacts, customers, suppliers, invoices, overdue invoices, receivables, payables, bank transaction volume, account mix, and CEO finance risk queue.
+
+---
+
 ## Salesforce CRM
 
 This is a real Salesforce REST API integration for CEOs who need revenue truth beside finance and operating metrics.
@@ -1041,9 +1070,10 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 19. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
 20. Open `/mailchimp` to sync and inspect audience health, campaign engagement, unsubscribes, bounces, and email risk.
 21. Open `/quickbooks` to sync and inspect accounting balances, receivables, payables, and finance risk.
-22. Open `/salesforce` to sync and inspect CRM pipeline, forecast, leads, stale deals, and revenue risk.
-23. Export a PDF report or board memo.
-24. Use `/todo` and `/slack` to track commitments and follow-ups.
+22. Open `/xero` to sync and inspect receivables, payables, invoices, contacts, bank transactions, and finance risk.
+23. Open `/salesforce` to sync and inspect CRM pipeline, forecast, leads, stale deals, and revenue risk.
+24. Export a PDF report or board memo.
+25. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -1069,6 +1099,7 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 /asana                           Asana CEO work management overview
 /mailchimp                       Mailchimp CEO marketing overview
 /quickbooks                      QuickBooks CEO accounting overview
+/xero                            Xero CEO accounting overview
 /salesforce                      Salesforce CEO CRM overview
 /stripe                          Stripe CEO payments overview
 /sign-in                         Clerk sign-in
@@ -1090,12 +1121,15 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 /api/asana/overview              Asana project/task sync endpoint
 /api/mailchimp/overview          Mailchimp audience/campaign/report sync endpoint
 /api/quickbooks/overview         QuickBooks account/report sync endpoint
+/api/xero/overview               Xero accounting sync endpoint
 /api/salesforce/overview         Salesforce account/opportunity/lead sync endpoint
 /api/stripe/overview             Stripe payments/customer/subscription sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
 /api/integrations/miro/authorize Miro OAuth start
 /api/integrations/miro/callback  Miro OAuth callback
+/api/integrations/xero/authorize Xero OAuth start
+/api/integrations/xero/callback  Xero OAuth callback
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint

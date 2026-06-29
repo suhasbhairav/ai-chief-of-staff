@@ -111,6 +111,12 @@ const INTEGRATION_NAV_ITEMS = [
     icon: "📗",
   },
   {
+    id: "xero",
+    name: "Xero Accounting",
+    href: "/xero",
+    icon: "🧾",
+  },
+  {
     id: "salesforce",
     name: "Salesforce CRM",
     href: "/salesforce",

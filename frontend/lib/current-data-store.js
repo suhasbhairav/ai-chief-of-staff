@@ -135,6 +135,7 @@ export const readOrganizationSummary = async () => {
       "salesforce-crm.json",
       "stripe-payments.json",
       "miro-boards.json",
+      "xero-accounting.json",
       "integrations.json"
     ];
 
@@ -607,6 +608,7 @@ const DEFAULT_INTEGRATIONS = {
   salesforce: { connected: false, name: "Salesforce CRM", icon: "☁️" },
   stripe: { connected: false, name: "Stripe Payments", icon: "💳" },
   miro: { connected: false, name: "Miro Boards", icon: "🧩" },
+  xero: { connected: false, name: "Xero Accounting", icon: "🧾" },
 };
 
 export const readIntegrations = async () => {
@@ -2118,6 +2120,131 @@ export const writeMiroBoards = async ({ accountName, boards, summary }) => {
     await upsertOrganizationSummary(summaryStore);
   } catch (error) {
     console.error("Failed to write Miro boards to Supabase:", error);
+  }
+
+  return store;
+};
+
+// ==========================================
+// XERO ACCOUNTING STORE
+// ==========================================
+
+const DEFAULT_XERO_ACCOUNTING_STORE = {
+  syncedAt: null,
+  tenantId: null,
+  tenantName: null,
+  organisation: {},
+  accounts: [],
+  contacts: [],
+  invoices: [],
+  bankTransactions: [],
+  summary: {
+    totalAccounts: 0,
+    bankAccounts: 0,
+    totalContacts: 0,
+    customers: 0,
+    suppliers: 0,
+    openInvoices: 0,
+    overdueInvoices: 0,
+    paidInvoices: 0,
+    accountsReceivable: 0,
+    accountsPayable: 0,
+    bankTransactionVolume: 0,
+    invoiceStatusBreakdown: [],
+    contactTypeBreakdown: [],
+    accountTypeBreakdown: [],
+    topInvoices: [],
+    topRisks: [],
+  },
+};
+
+export const readXeroAccounting = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const xeroPath = path.join(dir, "xero-accounting.json");
+    if (!fs.existsSync(xeroPath)) return DEFAULT_XERO_ACCOUNTING_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(xeroPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read xero-accounting.json:", error);
+      return DEFAULT_XERO_ACCOUNTING_STORE;
+    }
+  }
+
+  try {
+    const supabase = createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("organization_summaries")
+      .select("content")
+      .eq("id", "current")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data?.content?.xeroAccountingStore) {
+      return data.content.xeroAccountingStore;
+    }
+  } catch (error) {
+    console.error("Failed to read Xero accounting from Supabase:", error);
+  }
+
+  return DEFAULT_XERO_ACCOUNTING_STORE;
+};
+
+export const writeXeroAccounting = async ({
+  tenantId,
+  tenantName,
+  organisation,
+  accounts,
+  contacts,
+  invoices,
+  bankTransactions,
+  summary,
+}) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    tenantId: tenantId || null,
+    tenantName: tenantName || null,
+    organisation: organisation || {},
+    accounts: Array.isArray(accounts) ? accounts : [],
+    contacts: Array.isArray(contacts) ? contacts : [],
+    invoices: Array.isArray(invoices) ? invoices : [],
+    bankTransactions: Array.isArray(bankTransactions) ? bankTransactions : [],
+    summary: summary || DEFAULT_XERO_ACCOUNTING_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const xeroPath = path.join(dir, "xero-accounting.json");
+    fs.writeFileSync(xeroPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  try {
+    const supabase = createSupabaseServerClient();
+    let summaryStore = {};
+    const { data } = await supabase
+      .from("organization_summaries")
+      .select("content")
+      .eq("id", "current")
+      .maybeSingle();
+
+    if (data?.content) {
+      summaryStore = data.content;
+    } else {
+      summaryStore = {
+        updatedAt: new Date().toISOString(),
+        totalDepartments: 0,
+        totalRecords: 0,
+        departments: {},
+        departmentSummaries: [],
+      };
+    }
+
+    summaryStore.xeroAccountingStore = store;
+    await upsertOrganizationSummary(summaryStore);
+  } catch (error) {
+    console.error("Failed to write Xero accounting to Supabase:", error);
   }
 
   return store;

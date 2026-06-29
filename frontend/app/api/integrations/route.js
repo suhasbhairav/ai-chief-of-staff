@@ -15,6 +15,7 @@ import { validateQuickBooksCredentials } from "@/lib/quickbooks/server";
 import { validateSalesforceToken } from "@/lib/salesforce/server";
 import { validateStripeKey } from "@/lib/stripe/server";
 import { getMiroCredentials, validateMiroToken } from "@/lib/miro/server";
+import { getXeroCredentials, validateXeroCredentials } from "@/lib/xero/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -205,6 +206,26 @@ const sanitizeIntegrations = (integrations) => ({
         connected: Boolean(integrations.miro.connected || process.env.MIRO_ACCESS_TOKEN),
       }
     : integrations?.miro,
+  xero: integrations?.xero
+    ? {
+        ...integrations.xero,
+        access_token: undefined,
+        refresh_token: undefined,
+        client_secret: undefined,
+        hasToken: Boolean(
+          integrations.xero.access_token ||
+            integrations.xero.refresh_token ||
+            process.env.XERO_ACCESS_TOKEN ||
+            process.env.XERO_REFRESH_TOKEN
+        ),
+        tenant_id: integrations.xero.tenant_id || process.env.XERO_TENANT_ID || "",
+        connected: Boolean(
+          integrations.xero.connected ||
+            process.env.XERO_ACCESS_TOKEN ||
+            process.env.XERO_REFRESH_TOKEN
+        ),
+      }
+    : integrations?.xero,
 });
 
 export async function GET() {
@@ -242,6 +263,10 @@ export async function GET() {
       miroEnvConfigured: Boolean(process.env.MIRO_ACCESS_TOKEN),
       miroOAuthSupported: Boolean(
         getMiroCredentials().clientId && getMiroCredentials().clientSecret
+      ),
+      xeroEnvConfigured: Boolean(process.env.XERO_ACCESS_TOKEN || process.env.XERO_REFRESH_TOKEN),
+      xeroOAuthSupported: Boolean(
+        getXeroCredentials().clientId && getXeroCredentials().clientSecret
       ),
     });
   } catch (error) {
@@ -773,6 +798,54 @@ export async function POST(request) {
         ...current.miro,
         ...payload.miro,
         access_token: current.miro.access_token,
+      };
+    }
+
+    if (payload.xero?.access_token || payload.xero?.refresh_token) {
+      try {
+        const account = await validateXeroCredentials({
+          accessToken: payload.xero.access_token?.trim(),
+          refreshToken: payload.xero.refresh_token?.trim(),
+          clientId: payload.xero.client_id?.trim(),
+          clientSecret: payload.xero.client_secret?.trim(),
+          tenantId: payload.xero.tenant_id?.trim(),
+        });
+        payload.xero = {
+          connected: true,
+          name: "Xero Accounting",
+          icon: "🧾",
+          access_token: account.accessToken || payload.xero.access_token?.trim(),
+          refresh_token: payload.xero.refresh_token?.trim(),
+          client_id: payload.xero.client_id?.trim(),
+          client_secret: payload.xero.client_secret?.trim(),
+          tenant_id: account.tenantId,
+          tenant_name: account.tenantName,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Xero validation failed: ${error.message}. Use a valid Xero OAuth token with accounting read scopes and a connected tenant.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.xero && payload.xero.connected === false) {
+      payload.xero = {
+        connected: false,
+        name: "Xero Accounting",
+        icon: "🧾",
+      };
+    } else if (
+      payload.xero &&
+      !payload.xero.access_token &&
+      !payload.xero.refresh_token &&
+      (current.xero?.access_token || current.xero?.refresh_token)
+    ) {
+      payload.xero = {
+        ...current.xero,
+        ...payload.xero,
+        access_token: current.xero.access_token,
+        refresh_token: current.xero.refresh_token,
+        client_secret: current.xero.client_secret,
       };
     }
     
