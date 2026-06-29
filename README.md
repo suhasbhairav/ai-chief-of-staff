@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, a company digital twin, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, Miro board intelligence, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, a company digital twin, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -24,6 +24,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="Jira" src="https://img.shields.io/badge/Jira-Issue%20Execution-0052CC?style=for-the-badge&logo=jira" />
 <img alt="Confluence" src="https://img.shields.io/badge/Confluence-Knowledge%20Base-172B4D?style=for-the-badge&logo=confluence" />
 <img alt="GitHub" src="https://img.shields.io/badge/GitHub-PRs%20Bugs%20Repos-181717?style=for-the-badge&logo=github" />
+<img alt="Miro" src="https://img.shields.io/badge/Miro-Boards-FFD02F?style=for-the-badge&logo=miro" />
 <img alt="Asana" src="https://img.shields.io/badge/Asana-Work%20Management-F06A6A?style=for-the-badge&logo=asana" />
 <img alt="Mailchimp" src="https://img.shields.io/badge/Mailchimp-Marketing%20API-FFE01B?style=for-the-badge&logo=mailchimp" />
 <img alt="QuickBooks" src="https://img.shields.io/badge/QuickBooks-Accounting-2CA01C?style=for-the-badge&logo=quickbooks" />
@@ -259,6 +260,7 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
 | Jira Delivery | Tracks Jira projects, issues, priorities, owners, overdue work, stale work, and roadmap items | Jira Cloud REST API + Supabase |
 | Confluence Knowledge | Tracks Confluence spaces, pages, roadmaps, policies, owners, and content freshness | Confluence Cloud REST API + Supabase |
 | GitHub Engineering | Tracks repositories, pull requests, issues, bug queues, stale work, and engineering risk | GitHub REST API + Supabase |
+| Miro Boards | Tracks collaboration boards, owners, sharing signals, freshness, and stale strategy artifacts | Miro REST API + Supabase summary JSON |
 | Asana Work Management | Tracks projects, tasks, owners, overdue work, due-soon work, stale execution, and delivery risk | Asana REST API + Supabase |
 | Mailchimp Marketing | Tracks audiences, campaigns, reports, open/click rates, unsubscribes, bounces, and email risk | Mailchimp Marketing API + Supabase |
 | QuickBooks Accounting | Tracks chart of accounts, cash, A/R, A/P, income, expenses, reports, and finance risk | QuickBooks Online Accounting API + Supabase |
@@ -322,6 +324,7 @@ ai-chief-of-staff/
       jira/page.js                         # Jira CEO issue/project overview
       confluence/page.js                   # Confluence CEO knowledge overview
       github/page.js                       # GitHub CEO PR/bug/repository overview
+      miro/page.js                         # Miro CEO board/workspace overview
       asana/page.js                        # Asana CEO work management overview
       mailchimp/page.js                    # Mailchimp CEO marketing overview
       quickbooks/page.js                   # QuickBooks CEO accounting overview
@@ -338,6 +341,7 @@ ai-chief-of-staff/
         jira/overview/route.js             # Jira issue/project sync and store
         confluence/overview/route.js       # Confluence page/space sync and store
         github/overview/route.js           # GitHub repository/PR/issue sync and store
+        miro/boards/route.js               # Miro board sync and store
         asana/overview/route.js            # Asana project/task sync and store
         mailchimp/overview/route.js        # Mailchimp audience/campaign/report sync and store
         quickbooks/overview/route.js       # QuickBooks account/report sync and store
@@ -396,6 +400,7 @@ flowchart LR
   AA[QuickBooks Online API] --> AB[QuickBooks Accounting Snapshot]
   AC[Salesforce REST API] --> AD[Salesforce CRM Snapshot]
   AE[Stripe API] --> AF[Stripe Payments Snapshot]
+  AG[Miro REST API] --> AH[Miro Board Snapshot]
   R --> G
   T --> G
   V --> G
@@ -403,6 +408,8 @@ flowchart LR
   Z --> G
   AB --> G
   AD --> G
+  AF --> G
+  AH --> G
 ```
 
 1. A department user downloads a CSV template.
@@ -420,11 +427,12 @@ flowchart LR
 13. Jira sync stores issues, projects, delivery risks, and owner pressure for CEO review.
 14. Confluence sync stores knowledge pages, spaces, freshness, and roadmap/policy coverage for CEO review.
 15. GitHub sync stores repositories, PRs, issues, bugs, stale engineering work, and repo health for CEO review.
-16. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
-17. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
-18. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
-19. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
-20. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
+16. Miro sync stores boards, owners, sharing signals, freshness, and stale strategy artifacts for CEO review.
+17. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
+18. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
+19. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
+20. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
+21. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
 
 ---
 
@@ -796,6 +804,26 @@ The Stripe overview stores syncs in `stripe_payments_snapshots` and tracks custo
 
 ---
 
+## Miro Boards
+
+This is a real Miro REST API integration for CEOs who need collaboration and strategy-board visibility beside engineering, docs, and operating metrics.
+
+1. Create a Miro developer app.
+2. Configure OAuth with this redirect URL: `https://your-app-domain.com/api/integrations/miro/callback`.
+3. Grant at least `boards:read` access for board discovery.
+4. Add OAuth credentials in Vercel, or connect Miro manually from `/integrations`.
+5. Open `/miro` and click `Sync Miro Boards`.
+
+```bash
+MIRO_CLIENT_ID=your_miro_client_id
+MIRO_CLIENT_SECRET=your_miro_client_secret
+MIRO_ACCESS_TOKEN=optional_server_side_access_token
+```
+
+The Miro overview stores syncs in local `miro-boards.json` or Supabase organization summary JSON and tracks total boards, recently updated boards, stale boards, owner concentration, broad-sharing signals, recent collaboration boards, and stale strategy artifacts.
+
+---
+
 ## Reports And Board Memos
 
 <table>
@@ -1009,12 +1037,13 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 15. Open `/jira` to sync and inspect Jira delivery risks.
 16. Open `/confluence` to sync and inspect Confluence knowledge health.
 17. Open `/github` to sync and inspect GitHub PRs, bugs, stale issues, and repo health.
-18. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
-19. Open `/mailchimp` to sync and inspect audience health, campaign engagement, unsubscribes, bounces, and email risk.
-20. Open `/quickbooks` to sync and inspect accounting balances, receivables, payables, and finance risk.
-21. Open `/salesforce` to sync and inspect CRM pipeline, forecast, leads, stale deals, and revenue risk.
-22. Export a PDF report or board memo.
-23. Use `/todo` and `/slack` to track commitments and follow-ups.
+18. Open `/miro` to sync and inspect collaboration boards, stale strategy artifacts, owners, and sharing signals.
+19. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
+20. Open `/mailchimp` to sync and inspect audience health, campaign engagement, unsubscribes, bounces, and email risk.
+21. Open `/quickbooks` to sync and inspect accounting balances, receivables, payables, and finance risk.
+22. Open `/salesforce` to sync and inspect CRM pipeline, forecast, leads, stale deals, and revenue risk.
+23. Export a PDF report or board memo.
+24. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -1036,6 +1065,7 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 /jira                            Jira CEO issue/project overview
 /confluence                      Confluence CEO knowledge overview
 /github                          GitHub CEO PR/bug/repository overview
+/miro                            Miro CEO board/workspace overview
 /asana                           Asana CEO work management overview
 /mailchimp                       Mailchimp CEO marketing overview
 /quickbooks                      QuickBooks CEO accounting overview
@@ -1056,6 +1086,7 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 /api/jira/overview               Jira issue/project sync endpoint
 /api/confluence/overview         Confluence page/space sync endpoint
 /api/github/overview             GitHub repository/PR/issue sync endpoint
+/api/miro/boards                 Miro board sync endpoint
 /api/asana/overview              Asana project/task sync endpoint
 /api/mailchimp/overview          Mailchimp audience/campaign/report sync endpoint
 /api/quickbooks/overview         QuickBooks account/report sync endpoint
@@ -1063,6 +1094,8 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 /api/stripe/overview             Stripe payments/customer/subscription sync endpoint
 /api/integrations/clickup/authorize ClickUp OAuth start
 /api/integrations/clickup/callback  ClickUp OAuth callback
+/api/integrations/miro/authorize Miro OAuth start
+/api/integrations/miro/callback  Miro OAuth callback
 /api/integrations/slack/authorize Slack OAuth start
 /api/integrations/slack/callback  Slack OAuth callback
 /api/slack/events                 Slack Events API endpoint

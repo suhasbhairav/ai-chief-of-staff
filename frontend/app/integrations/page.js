@@ -53,6 +53,8 @@ function IntegrationsPageContent() {
   const [showSalesforceForm, setShowSalesforceForm] = useState(false);
   const [stripeSecretKey, setStripeSecretKey] = useState("");
   const [showStripeForm, setShowStripeForm] = useState(false);
+  const [miroAccessToken, setMiroAccessToken] = useState("");
+  const [showMiroForm, setShowMiroForm] = useState(false);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
 
@@ -80,6 +82,8 @@ function IntegrationsPageContent() {
       const slackError = searchParams.get("slack_error");
       const clickupSuccess = searchParams.get("clickup_success");
       const clickupError = searchParams.get("clickup_error");
+      const miroSuccess = searchParams.get("miro_success");
+      const miroError = searchParams.get("miro_error");
 
       if (slackSuccess) {
         setApiSuccess("Slack integrated successfully via OAuth!");
@@ -92,6 +96,12 @@ function IntegrationsPageContent() {
         setTimeout(() => setApiSuccess(""), 6000);
       } else if (clickupError) {
         setApiError(`ClickUp integration failed: ${clickupError}`);
+        setTimeout(() => setApiError(""), 8000);
+      } else if (miroSuccess) {
+        setApiSuccess("Miro integrated successfully via OAuth!");
+        setTimeout(() => setApiSuccess(""), 6000);
+      } else if (miroError) {
+        setApiError(`Miro integration failed: ${miroError}`);
         setTimeout(() => setApiError(""), 8000);
       }
     });
@@ -658,6 +668,48 @@ function IntegrationsPageContent() {
     }
   };
 
+  const handleMiroOAuthConnect = () => {
+    window.location.href = "/api/integrations/miro/authorize";
+  };
+
+  const handleMiroSubmit = async (e) => {
+    e.preventDefault();
+    if (!miroAccessToken.trim()) {
+      setApiError("Miro OAuth access token is required.");
+      return;
+    }
+
+    setConnectingId("miro");
+    setApiError("");
+    setApiSuccess("");
+
+    try {
+      const res = await fetch("/api/integrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          miro: {
+            access_token: miroAccessToken.trim(),
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify Miro connection");
+      }
+
+      setIntegrations(data);
+      setApiSuccess("Miro boards connected successfully.");
+      setMiroAccessToken("");
+      setShowMiroForm(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Failed to connect Miro");
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const handleDisconnect = async (id) => {
     if (!confirm(`Are you sure you want to disconnect ${integrations[id]?.name}? This will sever all real-time webhooks and task sync services.`)) return;
 
@@ -761,6 +813,11 @@ function IntegrationsPageContent() {
       description: "Sync Stripe customers, payments, subscriptions, invoices, and balances for CEO-level revenue, cash, billing, and churn-risk intelligence.",
       color: "from-fuchsia-500/15 to-[#121214]",
       iconBg: "bg-fuchsia-500/10 text-fuchsia-100",
+    },
+    miro: {
+      description: "Sync Miro boards for collaboration visibility, stale strategy artifacts, owner concentration, sharing signals, and recently active boards.",
+      color: "from-yellow-400/15 to-[#121214]",
+      iconBg: "bg-yellow-400/10 text-yellow-100",
     }
   };
 
@@ -818,6 +875,8 @@ function IntegrationsPageContent() {
                   ? "Connecting with Salesforce REST API and validating CRM access..."
                 : connectingId === "stripe"
                   ? "Connecting with Stripe API and validating payments access..."
+                : connectingId === "miro"
+                  ? "Connecting with Miro REST API and validating board access..."
                 : "Connecting with Slack API and checking scopes..."}
             </p>
           </div>
@@ -1054,6 +1113,62 @@ function IntegrationsPageContent() {
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white transition-colors"
+                >
+                  Verify & Connect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showMiroForm && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-[#27272a] bg-[#121215] p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+              <h3 className="text-md font-semibold text-white">Connect Miro Boards</h3>
+              <button 
+                onClick={() => setShowMiroForm(false)}
+                className="text-zinc-500 hover:text-white text-md font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4 text-xs text-zinc-400 space-y-2">
+              <h4 className="font-semibold text-yellow-200">Miro setup</h4>
+              <ol className="list-decimal pl-4 space-y-1">
+                <li>Create a Miro developer app and enable REST API access.</li>
+                <li>Grant at least <code className="text-yellow-200">boards:read</code> access for board discovery.</li>
+                <li>Use OAuth or paste an OAuth access token below.</li>
+                <li>After connecting, open <code className="text-yellow-200">/miro</code> and click <strong>Sync Miro Boards</strong>.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleMiroSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">Miro OAuth Access Token</label>
+                <input
+                  type="password"
+                  value={miroAccessToken}
+                  onChange={(e) => setMiroAccessToken(e.target.value)}
+                  placeholder="Miro OAuth access token"
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end gap-3 border-t border-[#27272a] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowMiroForm(false)}
+                  className="px-4 py-2 text-xs text-zinc-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-xs font-semibold text-zinc-950 transition-colors"
                 >
                   Verify & Connect
                 </button>
@@ -1415,6 +1530,7 @@ function IntegrationsPageContent() {
           const isQuickBooks = id === "quickbooks";
           const isSalesforce = id === "salesforce";
           const isStripe = id === "stripe";
+          const isMiro = id === "miro";
 
           return (
             <div
@@ -1541,6 +1657,14 @@ function IntegrationsPageContent() {
                     <div><span className="text-zinc-600 font-semibold">Account:</span> {info.account_name || info.account_id || "Configured in env"}</div>
                     <div><span className="text-zinc-600 font-semibold">Country:</span> {info.country || "Stripe account"}</div>
                     <div><span className="text-zinc-600 font-semibold">Currency:</span> {(info.default_currency || "usd").toUpperCase()}</div>
+                  </div>
+                )}
+
+                {info.connected && isMiro && (
+                  <div className="mt-4 rounded-lg bg-zinc-900/40 p-3 border border-[#27272a] text-[11px] space-y-1 text-zinc-400">
+                    <div><span className="text-zinc-600 font-semibold">Access:</span> boards:read</div>
+                    <div><span className="text-zinc-600 font-semibold">Sample board:</span> {info.first_board_name || "Miro workspace"}</div>
+                    <div><span className="text-zinc-600 font-semibold">Source:</span> {info.hasToken ? "Token configured" : "OAuth"}</div>
                   </div>
                 )}
               </div>
@@ -1672,6 +1796,21 @@ function IntegrationsPageContent() {
                   >
                     Connect Stripe
                   </button>
+                ) : isMiro ? (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={handleMiroOAuthConnect}
+                      className="flex w-full items-center justify-center rounded-lg bg-yellow-500 hover:bg-yellow-400 py-2.5 text-xs font-semibold text-zinc-950 transition-colors"
+                    >
+                      Connect Miro OAuth
+                    </button>
+                    <button
+                      onClick={() => setShowMiroForm(true)}
+                      className="text-center text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors py-1"
+                    >
+                      Or paste access token manually
+                    </button>
+                  </div>
                 ) : (
                   <div className="text-center text-xs text-zinc-500 italic py-2">
                     Coming soon for non-sandbox environments.

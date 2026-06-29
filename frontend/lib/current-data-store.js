@@ -134,6 +134,7 @@ export const readOrganizationSummary = async () => {
       "quickbooks-accounting.json",
       "salesforce-crm.json",
       "stripe-payments.json",
+      "miro-boards.json",
       "integrations.json"
     ];
 
@@ -605,6 +606,7 @@ const DEFAULT_INTEGRATIONS = {
   quickbooks: { connected: false, name: "QuickBooks Accounting", icon: "📗" },
   salesforce: { connected: false, name: "Salesforce CRM", icon: "☁️" },
   stripe: { connected: false, name: "Stripe Payments", icon: "💳" },
+  miro: { connected: false, name: "Miro Boards", icon: "🧩" },
 };
 
 export const readIntegrations = async () => {
@@ -2016,6 +2018,106 @@ export const writeStripePayments = async ({
 
   if (error) {
     throw new Error(`Unable to save Stripe payments snapshot: ${error.message}`);
+  }
+
+  return store;
+};
+
+// ==========================================
+// MIRO BOARD WORKSPACE STORE
+// ==========================================
+
+const DEFAULT_MIRO_BOARD_STORE = {
+  syncedAt: null,
+  accountName: null,
+  boards: [],
+  summary: {
+    totalBoards: 0,
+    recentlyUpdated: 0,
+    staleBoards: 0,
+    privateBoards: 0,
+    publicBoards: 0,
+    owners: 0,
+    ownerBreakdown: [],
+    permissionBreakdown: [],
+    recentBoards: [],
+    staleBoardQueue: [],
+  },
+};
+
+export const readMiroBoards = async () => {
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const miroPath = path.join(dir, "miro-boards.json");
+    if (!fs.existsSync(miroPath)) return DEFAULT_MIRO_BOARD_STORE;
+
+    try {
+      return JSON.parse(fs.readFileSync(miroPath, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read miro-boards.json:", error);
+      return DEFAULT_MIRO_BOARD_STORE;
+    }
+  }
+
+  try {
+    const supabase = createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("organization_summaries")
+      .select("content")
+      .eq("id", "current")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data?.content?.miroBoardStore) {
+      return data.content.miroBoardStore;
+    }
+  } catch (error) {
+    console.error("Failed to read Miro boards from Supabase:", error);
+  }
+
+  return DEFAULT_MIRO_BOARD_STORE;
+};
+
+export const writeMiroBoards = async ({ accountName, boards, summary }) => {
+  const store = {
+    syncedAt: new Date().toISOString(),
+    accountName: accountName || null,
+    boards: Array.isArray(boards) ? boards : [],
+    summary: summary || DEFAULT_MIRO_BOARD_STORE.summary,
+  };
+
+  if (!isSupabaseConfigured) {
+    const dir = getLocalDataDir();
+    const miroPath = path.join(dir, "miro-boards.json");
+    fs.writeFileSync(miroPath, JSON.stringify(store, null, 2), "utf-8");
+    return store;
+  }
+
+  try {
+    const supabase = createSupabaseServerClient();
+    let summaryStore = {};
+    const { data } = await supabase
+      .from("organization_summaries")
+      .select("content")
+      .eq("id", "current")
+      .maybeSingle();
+
+    if (data?.content) {
+      summaryStore = data.content;
+    } else {
+      summaryStore = {
+        updatedAt: new Date().toISOString(),
+        totalDepartments: 0,
+        totalRecords: 0,
+        departments: {},
+        departmentSummaries: [],
+      };
+    }
+
+    summaryStore.miroBoardStore = store;
+    await upsertOrganizationSummary(summaryStore);
+  } catch (error) {
+    console.error("Failed to write Miro boards to Supabase:", error);
   }
 
   return store;

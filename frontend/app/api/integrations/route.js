@@ -14,6 +14,7 @@ import { validateMailchimpToken } from "@/lib/mailchimp/server";
 import { validateQuickBooksCredentials } from "@/lib/quickbooks/server";
 import { validateSalesforceToken } from "@/lib/salesforce/server";
 import { validateStripeKey } from "@/lib/stripe/server";
+import { getMiroCredentials, validateMiroToken } from "@/lib/miro/server";
 
 const validateNotionDatabase = async ({ apiKey, databaseId }) => {
   const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
@@ -196,6 +197,14 @@ const sanitizeIntegrations = (integrations) => ({
         connected: Boolean(integrations.stripe.connected || process.env.STRIPE_SECRET_KEY),
       }
     : integrations?.stripe,
+  miro: integrations?.miro
+    ? {
+        ...integrations.miro,
+        access_token: undefined,
+        hasToken: Boolean(integrations.miro.access_token || process.env.MIRO_ACCESS_TOKEN),
+        connected: Boolean(integrations.miro.connected || process.env.MIRO_ACCESS_TOKEN),
+      }
+    : integrations?.miro,
 });
 
 export async function GET() {
@@ -230,6 +239,10 @@ export async function GET() {
         process.env.SALESFORCE_INSTANCE_URL && process.env.SALESFORCE_ACCESS_TOKEN
       ),
       stripeEnvConfigured: Boolean(process.env.STRIPE_SECRET_KEY),
+      miroEnvConfigured: Boolean(process.env.MIRO_ACCESS_TOKEN),
+      miroOAuthSupported: Boolean(
+        getMiroCredentials().clientId && getMiroCredentials().clientSecret
+      ),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to retrieve integrations.";
@@ -729,6 +742,37 @@ export async function POST(request) {
         ...current.stripe,
         ...payload.stripe,
         secret_key: current.stripe.secret_key,
+      };
+    }
+
+    if (payload.miro?.access_token) {
+      try {
+        const account = await validateMiroToken(payload.miro.access_token.trim());
+        payload.miro = {
+          connected: true,
+          name: "Miro Boards",
+          icon: "🧩",
+          access_token: payload.miro.access_token.trim(),
+          first_board_name: account.firstBoardName,
+          integratedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        return NextResponse.json(
+          { error: `Miro validation failed: ${error.message}. Use a valid Miro OAuth access token with boards:read access.` },
+          { status: 400 }
+        );
+      }
+    } else if (payload.miro && payload.miro.connected === false) {
+      payload.miro = {
+        connected: false,
+        name: "Miro Boards",
+        icon: "🧩",
+      };
+    } else if (payload.miro && !payload.miro.access_token && current.miro?.access_token) {
+      payload.miro = {
+        ...current.miro,
+        ...payload.miro,
+        access_token: current.miro.access_token,
       };
     }
     

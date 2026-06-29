@@ -87,6 +87,12 @@ const INTEGRATION_NAV_ITEMS = [
     icon: "🐙",
   },
   {
+    id: "miro",
+    name: "Miro Boards",
+    href: "/miro",
+    icon: "🧩",
+  },
+  {
     id: "asana",
     name: "Asana Work",
     href: "/asana",
