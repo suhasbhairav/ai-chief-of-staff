@@ -4,7 +4,7 @@
 
 ### The open-source AI operating system for CEOs
 
-Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, PDF reports, board memos, and guarded AI recommendations.
+Turn every department's metrics into board-ready decisions, Clerk-protected workspaces, Slack-aware action tracking, GitHub PR/bug intelligence, ClickUp OKR/task/roadmap intelligence, executive scorecards, Supabase vector memory, CEO chat, a company digital twin, PDF reports, board memos, and guarded AI recommendations.
 
 <br />
 
@@ -47,9 +47,11 @@ Independent personal project. Completely open source under the MIT License.
 
 ## Why This Exists
 
-TAI Chief is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, and OpenAI-generated recommendations.
+TAI Chief is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, OpenAI-generated recommendations, and forward-looking scenario simulations.
 
 The product is designed around a simple idea: every important department should report the metrics a serious CEO would actually inspect, and the Executive dashboard should synthesize those signals into company-level operating judgment.
+
+TAI Chief is also designed to move beyond summarizing the past. The Company Digital Twin lets leaders ask "what happens if..." questions and see the likely consequences across cash, revenue, GTM efficiency, hiring, margins, support, and engineering capacity.
 
 ---
 
@@ -144,6 +146,17 @@ The product is designed around a simple idea: every important department should 
       <p>Chat about any department, retrieve Supabase vector evidence, and escalate to guarded OpenAI synthesis only when the CEO asks.</p>
       <p><strong>Output:</strong> grounded operating answers.</p>
     </td>
+    <td width="33%" valign="top" bgcolor="#DCFCE7">
+      <h3>Company Digital Twin</h3>
+      <p>
+        <img src="https://img.shields.io/badge/Scenario%20planning-16A34A?style=flat-square" />
+        <img src="https://img.shields.io/badge/Editable%20assumptions-0F766E?style=flat-square" />
+      </p>
+      <p>Simulate decisions like hiring salespeople, changing marketing spend, and adjusting prices across cash runway, ARR/MRR, CAC payback, pipeline, hiring cost, gross margin, support load, and engineering capacity.</p>
+      <p><strong>Output:</strong> best, expected, and worst-case operating consequences.</p>
+    </td>
+  </tr>
+  <tr>
     <td width="33%" valign="top" bgcolor="#EDE9FE">
       <h3>Linear Ticket Overview</h3>
       <p>
@@ -238,6 +251,7 @@ The product is designed around a simple idea: every important department should 
 | Authentication | Protects app routes and exposes sign-in/sign-out controls | Clerk |
 | AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
 | CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
+| Company Digital Twin | Simulates best, expected, and worst-case operating consequences from editable assumptions | Browser model + Recharts |
 | Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
 | Deal Pipeline | Tracks HubSpot pipeline health for the CEO | HubSpot CRM API + Supabase |
 | Ticket Overview | Tracks Linear execution health for the CEO | Linear npm SDK + Supabase |
@@ -301,6 +315,7 @@ ai-chief-of-staff/
       todo/page.js                         # Master To-Do command center
       integrations/page.js                 # Slack integration hub
       assistant/page.js                    # CEO chat over Supabase vector memory
+      digital-twin/page.js                 # Company scenario simulator
       pipeline/page.js                     # HubSpot CEO deal pipeline
       tickets/page.js                      # Linear CEO ticket overview
       clickup/page.js                      # ClickUp OKR/task/roadmap overview
@@ -399,16 +414,17 @@ flowchart LR
 7. Uploads refresh Supabase vector embeddings for CEO chat retrieval.
 8. OpenAI recommendations are generated only on explicit button clicks or chat sends.
 9. PDF reports and board memos export from the live dashboard state.
-10. Slack events and channel sync harvest commitments into the Master To-Do.
-11. ClickUp sync stores Goals, tasks, views, roadmap items, and risk summaries for CEO review.
-12. Jira sync stores issues, projects, delivery risks, and owner pressure for CEO review.
-13. Confluence sync stores knowledge pages, spaces, freshness, and roadmap/policy coverage for CEO review.
-14. GitHub sync stores repositories, PRs, issues, bugs, stale engineering work, and repo health for CEO review.
-15. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
-16. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
-17. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
-18. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
-19. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
+10. The Digital Twin simulator models scenario consequences from editable operating assumptions.
+11. Slack events and channel sync harvest commitments into the Master To-Do.
+12. ClickUp sync stores Goals, tasks, views, roadmap items, and risk summaries for CEO review.
+13. Jira sync stores issues, projects, delivery risks, and owner pressure for CEO review.
+14. Confluence sync stores knowledge pages, spaces, freshness, and roadmap/policy coverage for CEO review.
+15. GitHub sync stores repositories, PRs, issues, bugs, stale engineering work, and repo health for CEO review.
+16. Asana sync stores projects, tasks, owners, overdue work, stale work, and execution risk for CEO review.
+17. Mailchimp sync stores audiences, campaigns, reports, engagement, unsubscribes, bounces, and marketing risk for CEO review.
+18. QuickBooks sync stores accounts, P&L, balance sheet, cash flow, receivables, payables, and accounting risk for CEO review.
+19. Salesforce sync stores accounts, opportunities, leads, pipeline, forecast, stale deals, and revenue risk for CEO review.
+20. Stripe sync stores customers, payment intents, subscriptions, invoices, balances, MRR, failed payments, overdue invoices, and billing risk for CEO review.
 
 ---
 
@@ -951,6 +967,29 @@ The Executive page also includes a metrics glossary so operators can understand 
 
 ---
 
+## Company Digital Twin
+
+The `/digital-twin` workspace is a forward-looking scenario simulator for CEO decisions. Instead of only summarizing historical performance, it models how operating choices influence one another over the next 12 months.
+
+Example CEO question:
+
+> What happens if we hire five salespeople, increase marketing spend by 20%, and reduce prices by 10%?
+
+The simulator returns best, expected, and worst-case outcomes for:
+
+- Cash runway
+- ARR and MRR
+- CAC payback
+- Pipeline requirements
+- Hiring costs
+- Gross margin
+- Support workload
+- Engineering capacity
+
+Every assumption is visible and editable, including starting cash, current MRR, customer count, gross margin, monthly burn, marketing spend, baseline new MRR, CAC, win rate, sales cycle, sales quota, ramp time, churn, support capacity, engineering capacity, roadmap demand, price elasticity, and margin sensitivity.
+
+---
+
 ## Recommended CEO Workflow
 
 1. Start at the home command center.
@@ -963,18 +1002,19 @@ The Executive page also includes a metrics glossary so operators can understand 
 8. Review the combined scorecards.
 9. Click `Fetch Org Suggestions`.
 10. Open `/assistant` to ask CEO-level questions grounded in Supabase vector memory.
-11. Open `/pipeline` to sync and inspect the HubSpot deal pipeline.
-12. Open `/tickets` to sync and inspect Linear execution health.
-13. Open `/clickup` to sync and inspect ClickUp OKRs, tasks, and roadmap risks.
-14. Open `/jira` to sync and inspect Jira delivery risks.
-15. Open `/confluence` to sync and inspect Confluence knowledge health.
-16. Open `/github` to sync and inspect GitHub PRs, bugs, stale issues, and repo health.
-17. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
-18. Open `/mailchimp` to sync and inspect audience health, campaign engagement, unsubscribes, bounces, and email risk.
-19. Open `/quickbooks` to sync and inspect accounting balances, receivables, payables, and finance risk.
-20. Open `/salesforce` to sync and inspect CRM pipeline, forecast, leads, stale deals, and revenue risk.
-21. Export a PDF report or board memo.
-22. Use `/todo` and `/slack` to track commitments and follow-ups.
+11. Open `/digital-twin` to simulate future operating decisions before committing to them.
+12. Open `/pipeline` to sync and inspect the HubSpot deal pipeline.
+13. Open `/tickets` to sync and inspect Linear execution health.
+14. Open `/clickup` to sync and inspect ClickUp OKRs, tasks, and roadmap risks.
+15. Open `/jira` to sync and inspect Jira delivery risks.
+16. Open `/confluence` to sync and inspect Confluence knowledge health.
+17. Open `/github` to sync and inspect GitHub PRs, bugs, stale issues, and repo health.
+18. Open `/asana` to sync and inspect Asana projects, tasks, owner gaps, and execution risks.
+19. Open `/mailchimp` to sync and inspect audience health, campaign engagement, unsubscribes, bounces, and email risk.
+20. Open `/quickbooks` to sync and inspect accounting balances, receivables, payables, and finance risk.
+21. Open `/salesforce` to sync and inspect CRM pipeline, forecast, leads, stale deals, and revenue risk.
+22. Export a PDF report or board memo.
+23. Use `/todo` and `/slack` to track commitments and follow-ups.
 
 ---
 
@@ -989,6 +1029,7 @@ The Executive page also includes a metrics glossary so operators can understand 
 /slack                           Live Slack workspace
 /todo                            Master To-Do
 /assistant                       CEO chat over Supabase vector memory
+/digital-twin                    Company digital twin and scenario simulator
 /pipeline                        HubSpot CEO deal pipeline
 /tickets                         Linear CEO ticket overview
 /clickup                         ClickUp CEO OKR/task/roadmap overview

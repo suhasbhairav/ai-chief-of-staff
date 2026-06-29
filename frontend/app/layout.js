@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,10 +28,129 @@ const DEPARTMENTS = [
   { id: "strategy", name: "Corporate Strategy", icon: "🎯" },
 ];
 
+const PRIMARY_NAV_ITEMS = [
+  {
+    id: "assistant",
+    name: "CEO Chat",
+    href: "/assistant",
+    icon: "✨",
+  },
+  {
+    id: "pipeline",
+    name: "Deal Pipeline",
+    href: "/pipeline",
+    icon: "🧲",
+  },
+  {
+    id: "digital-twin",
+    name: "Digital Twin",
+    href: "/digital-twin",
+    icon: "🧭",
+  },
+  {
+    id: "tickets",
+    name: "Ticket Overview",
+    href: "/tickets",
+    icon: "🎫",
+  },
+  {
+    id: "todo",
+    name: "Master To-Do",
+    href: "/todo",
+    icon: "📋",
+  },
+];
+
+const INTEGRATION_NAV_ITEMS = [
+  {
+    id: "clickup",
+    name: "ClickUp Overview",
+    href: "/clickup",
+    icon: "☑️",
+  },
+  {
+    id: "jira",
+    name: "Jira Overview",
+    href: "/jira",
+    icon: "🔷",
+  },
+  {
+    id: "confluence",
+    name: "Confluence Knowledge",
+    href: "/confluence",
+    icon: "📘",
+  },
+  {
+    id: "github",
+    name: "GitHub PRs & Bugs",
+    href: "/github",
+    icon: "🐙",
+  },
+  {
+    id: "asana",
+    name: "Asana Work",
+    href: "/asana",
+    icon: "🔴",
+  },
+  {
+    id: "mailchimp",
+    name: "Mailchimp Marketing",
+    href: "/mailchimp",
+    icon: "📬",
+  },
+  {
+    id: "quickbooks",
+    name: "QuickBooks Accounting",
+    href: "/quickbooks",
+    icon: "📗",
+  },
+  {
+    id: "salesforce",
+    name: "Salesforce CRM",
+    href: "/salesforce",
+    icon: "☁️",
+  },
+  {
+    id: "stripe",
+    name: "Stripe Payments",
+    href: "/stripe",
+    icon: "💳",
+  },
+  {
+    id: "slack",
+    name: "Slack Workspace",
+    href: "/slack",
+    icon: "💬",
+  },
+  {
+    id: "integrations",
+    name: "Integrations Hub",
+    href: "/integrations",
+    icon: "🔌",
+  },
+];
+
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const integrationsMenuRef = useRef(null);
   const isHome = pathname === "/";
+  const activeIntegration = INTEGRATION_NAV_ITEMS.find((item) => pathname === item.href);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (
+        integrationsMenuRef.current &&
+        !integrationsMenuRef.current.contains(event.target)
+      ) {
+        setIntegrationsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
 
   return (
     <html lang="en">
@@ -80,98 +199,7 @@ export default function RootLayout({ children }) {
                   <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                     AI Agent Co-Pilot
                   </div>
-                  {[
-                    {
-                      id: "assistant",
-                      name: "CEO Chat",
-                      href: "/assistant",
-                      icon: "✨",
-                    },
-                    {
-                      id: "pipeline",
-                      name: "Deal Pipeline",
-                      href: "/pipeline",
-                      icon: "🧲",
-                    },
-                    {
-                      id: "tickets",
-                      name: "Ticket Overview",
-                      href: "/tickets",
-                      icon: "🎫",
-                    },
-                    {
-                      id: "clickup",
-                      name: "ClickUp Overview",
-                      href: "/clickup",
-                      icon: "☑️",
-                    },
-                    {
-                      id: "jira",
-                      name: "Jira Overview",
-                      href: "/jira",
-                      icon: "🔷",
-                    },
-                    {
-                      id: "confluence",
-                      name: "Confluence Knowledge",
-                      href: "/confluence",
-                      icon: "📘",
-                    },
-                    {
-                      id: "github",
-                      name: "GitHub PRs & Bugs",
-                      href: "/github",
-                      icon: "🐙",
-                    },
-                    {
-                      id: "asana",
-                      name: "Asana Work",
-                      href: "/asana",
-                      icon: "🔴",
-                    },
-                    {
-                      id: "mailchimp",
-                      name: "Mailchimp Marketing",
-                      href: "/mailchimp",
-                      icon: "📬",
-                    },
-                    {
-                      id: "quickbooks",
-                      name: "QuickBooks Accounting",
-                      href: "/quickbooks",
-                      icon: "📗",
-                    },
-                    {
-                      id: "salesforce",
-                      name: "Salesforce CRM",
-                      href: "/salesforce",
-                      icon: "☁️",
-                    },
-                    {
-                      id: "stripe",
-                      name: "Stripe Payments",
-                      href: "/stripe",
-                      icon: "💳",
-                    },
-                    {
-                      id: "todo",
-                      name: "Master To-Do",
-                      href: "/todo",
-                      icon: "📋",
-                    },
-                    {
-                      id: "slack",
-                      name: "Slack Workspace",
-                      href: "/slack",
-                      icon: "💬",
-                    },
-                    {
-                      id: "integrations",
-                      name: "Integrations Hub",
-                      href: "/integrations",
-                      icon: "🔌",
-                    },
-                  ].map((item) => {
+                  {PRIMARY_NAV_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                       <Link
@@ -189,6 +217,27 @@ export default function RootLayout({ children }) {
                       </Link>
                     );
                   })}
+
+                  <div className="md:hidden">
+                    {INTEGRATION_NAV_ITEMS.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                            isActive
+                              ? "bg-indigo-600 text-white shadow-sm border border-indigo-500/50"
+                              : "text-zinc-400 hover:bg-[#121214] hover:text-zinc-200"
+                          }`}
+                        >
+                          <span className="mr-2 text-sm">{item.icon}</span>
+                          <span className="truncate">{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -252,7 +301,62 @@ export default function RootLayout({ children }) {
 
             {/* Main Workspace Frame */}
             <main className="flex-1 overflow-y-auto bg-[#0c0c0e] px-4 pb-6 pt-16 md:px-8 md:py-6">
-              <div className="mx-auto max-w-6xl">{children}</div>
+              <div className="mx-auto max-w-6xl">
+                <div className="mb-6 hidden items-center justify-between border-b border-[#27272a] pb-4 md:flex">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Workspace
+                  </div>
+
+                  <div className="relative" ref={integrationsMenuRef}>
+                    <button
+                      type="button"
+                      aria-haspopup="menu"
+                      aria-expanded={integrationsOpen}
+                      onClick={() => setIntegrationsOpen((open) => !open)}
+                      className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors ${
+                        activeIntegration
+                          ? "border-indigo-500/50 bg-indigo-600 text-white shadow-sm"
+                          : "border-[#27272a] bg-[#121214] text-zinc-200 hover:bg-[#18181b]"
+                      }`}
+                    >
+                      <span>{activeIntegration?.icon || "🔌"}</span>
+                      <span>{activeIntegration?.name || "Integrations"}</span>
+                      <span className="text-[10px] text-current/70">
+                        {integrationsOpen ? "▲" : "▼"}
+                      </span>
+                    </button>
+
+                    {integrationsOpen && (
+                      <div
+                        role="menu"
+                        className="absolute right-0 top-12 z-50 w-64 rounded-md border border-[#27272a] bg-[#09090b] p-2 shadow-2xl shadow-black/40"
+                      >
+                        {INTEGRATION_NAV_ITEMS.map((item) => {
+                          const isActive = pathname === item.href;
+                          return (
+                            <Link
+                              key={item.id}
+                              href={item.href}
+                              role="menuitem"
+                              onClick={() => setIntegrationsOpen(false)}
+                              className={`flex items-center rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                                isActive
+                                  ? "bg-indigo-600 text-white shadow-sm"
+                                  : "text-zinc-400 hover:bg-[#121214] hover:text-zinc-200"
+                              }`}
+                            >
+                              <span className="mr-2 text-sm">{item.icon}</span>
+                              <span className="truncate">{item.name}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {children}
+              </div>
             </main>
           </>
         </ClerkProvider>
