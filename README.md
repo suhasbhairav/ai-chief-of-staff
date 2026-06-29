@@ -1,6 +1,6 @@
 <div align="center">
 
-# TAI Chief
+# TAI Chief - AI Chief of Staff
 
 ### The open-source AI operating system for CEOs
 
