@@ -3,27 +3,27 @@
 .env.*
 !.env.example
 !.env.local.example
-frontend/.env
-frontend/.env.*
-!frontend/.env.example
-!frontend/.env.local.example
+ai-chief-of-staff/.env
+ai-chief-of-staff/.env.*
+!ai-chief-of-staff/.env.example
+!ai-chief-of-staff/.env.local.example
 backend/.env
 backend/.env.*
 !backend/.env.example
 
 # Node / Next.js
 node_modules/
-frontend/node_modules/
+ai-chief-of-staff/node_modules/
 .next/
-frontend/.next/
+ai-chief-of-staff/.next/
 out/
-frontend/out/
+ai-chief-of-staff/out/
 dist/
-frontend/dist/
+ai-chief-of-staff/dist/
 build/
-frontend/build/
+ai-chief-of-staff/build/
 .vercel/
-frontend/.vercel/
+ai-chief-of-staff/.vercel/
 
 # Node package manager caches and logs
 .npm/
@@ -42,6 +42,7 @@ pnpm-debug.log*
 next-env.d.ts
 
 # Python
+backend/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -81,8 +82,8 @@ logs/
 *.db
 
 # Local generated app data
-frontend/current-data/*.json
-!frontend/current-data/.gitkeep
+ai-chief-of-staff/current-data/*.json
+!ai-chief-of-staff/current-data/.gitkeep
 
 # OS and editor files
 .DS_Store

@@ -27,7 +27,7 @@ The schema stores each department upload in `department_snapshots` with flexible
 
 The `organization_summaries` table stores the current executive rollup as JSONB.
 
-The schema also enables the `vector` extension and stores OpenAI embeddings in `department_embeddings`. The `match_department_embeddings` RPC performs cosine-similarity retrieval for the CEO Chat assistant.
+The schema also enables the `vector` extension and stores configurable LLM embeddings in `department_embeddings`. The `match_department_embeddings` RPC performs cosine-similarity retrieval for the CEO Chat assistant.
 
 Additional operating-system tables:
 
@@ -52,13 +52,17 @@ Additional operating-system tables:
 
 ## 2. Environment Variables
 
-Create `frontend/.env.local` or update `frontend/.env`:
+Create `ai-chief-of-staff/.env.local` or update `ai-chief-of-staff/.env`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-or-secret-key
-OPENAI_API_KEY=your-openai-api-key
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-5.5
+LLM_API_KEY=your-llm-api-key
+EMBEDDING_PROVIDER=openai
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_API_KEY=your-embedding-api-key
 NOTION_API_KEY=your-notion-internal-integration-secret
 NOTION_OKR_DATABASE_ID=your-product-okr-database-id
 HUBSPOT_ACCESS_TOKEN=your-hubspot-private-app-access-token
@@ -118,6 +122,6 @@ The default embedding model produces 1536-dimensional vectors, matching `departm
 19. Salesforce accounts, opportunities, and leads sync through `/api/salesforce/overview` into `salesforce_crm_snapshots`.
 20. Stripe customers, payments, subscriptions, invoices, and balances sync through `/api/stripe/overview` into `stripe_payments_snapshots`.
 21. Board memo exports save memo metadata through `/api/board-memos`.
-22. Metric cards, charts, PDF reports, board memos, and OpenAI suggestions are calculated from database JSON.
+22. Metric cards, charts, PDF reports, board memos, and LLM suggestions are calculated from database JSON.
 
 Use `POST /api/embeddings/rebuild` with `{ "departmentId": "all" }` after running the schema on an existing project to backfill vector memory for older uploads.

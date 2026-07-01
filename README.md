@@ -31,7 +31,7 @@ Turn every department's metrics into board-ready decisions, Clerk-protected work
 <img alt="Xero" src="https://img.shields.io/badge/Xero-Accounting-13B5EA?style=for-the-badge&logo=xero" />
 <img alt="Salesforce" src="https://img.shields.io/badge/Salesforce-CRM-00A1E0?style=for-the-badge&logo=salesforce" />
 <img alt="Stripe" src="https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe" />
-<img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-Responses%20API-111827?style=for-the-badge&logo=openai" />
+<img alt="Provider-neutral LLM" src="https://img.shields.io/badge/LLM-Provider%20Neutral-111827?style=for-the-badge" />
 
 <br />
 <br />
@@ -49,7 +49,7 @@ Independent personal project. Completely open source under the MIT License.
 
 ## Why This Exists
 
-TAI Chief is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, OpenAI-generated recommendations, and forward-looking scenario simulations.
+TAI Chief is an operating intelligence workspace for CEOs, founders, operators, and functional leaders. It turns department-level CSV uploads into live dashboards, current Supabase JSONB snapshots, Slack-derived action items, historical trend imports, board memos, provider-neutral LLM recommendations, and forward-looking scenario simulations.
 
 The product is designed around a simple idea: every important department should report the metrics a serious CEO would actually inspect, and the Executive dashboard should synthesize those signals into company-level operating judgment.
 
@@ -82,10 +82,10 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
     <td width="33%" valign="top" bgcolor="#BBF7D0">
       <h3>AI Suggestions On Demand</h3>
       <p>
-        <img src="https://img.shields.io/badge/OpenAI-111827?style=flat-square" />
+        <img src="https://img.shields.io/badge/LLM--neutral-111827?style=flat-square" />
         <img src="https://img.shields.io/badge/Human--triggered-16A34A?style=flat-square" />
       </p>
-      <p>OpenAI calls happen only when a user clicks <code>Fetch Suggestions</code> or <code>Fetch Org Suggestions</code>.</p>
+      <p>LLM calls happen only when a user clicks <code>Fetch Suggestions</code> or <code>Fetch Org Suggestions</code>.</p>
       <p><strong>Output:</strong> concise action recommendations.</p>
     </td>
   </tr>
@@ -125,7 +125,7 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
         <img src="https://img.shields.io/badge/Security-C2410C?style=flat-square" />
         <img src="https://img.shields.io/badge/Jailbreak%20defense-EA580C?style=flat-square" />
       </p>
-      <p>All OpenAI calls are protected against prompt injection, jailbreaks, secret leakage, and unsafe task mutations.</p>
+      <p>All LLM calls are protected against prompt injection, jailbreaks, secret leakage, and unsafe task mutations.</p>
       <p><strong>Output:</strong> safer AI operations.</p>
     </td>
   </tr>
@@ -145,7 +145,7 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
         <img src="https://img.shields.io/badge/RAG-0F766E?style=flat-square" />
         <img src="https://img.shields.io/badge/pgvector-0891B2?style=flat-square" />
       </p>
-      <p>Chat about any department, retrieve Supabase vector evidence, and escalate to guarded OpenAI synthesis only when the CEO asks.</p>
+      <p>Chat about any department, retrieve Supabase vector evidence, and escalate to guarded LLM synthesis only when the CEO asks.</p>
       <p><strong>Output:</strong> grounded operating answers.</p>
     </td>
     <td width="33%" valign="top" bgcolor="#DCFCE7">
@@ -251,8 +251,8 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
 | Executive dashboard | Summarizes all departments into CEO scorecards | Supabase JSONB |
 | Department dashboards | Calculates KPI cards and charts from uploaded CSVs | Browser CSV parser + Supabase |
 | Authentication | Protects app routes and exposes sign-in/sign-out controls | Clerk |
-| AI synthesis | Generates CEO and department recommendations | OpenAI Responses API |
-| CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + OpenAI |
+| AI synthesis | Generates CEO and department recommendations | Vercel AI SDK provider layer |
+| CEO Chat | Retrieves department evidence and answers CEO questions | Supabase pgvector + configurable LLM |
 | Company Digital Twin | Simulates best, expected, and worst-case operating consequences from editable assumptions | Browser model + Recharts |
 | Product OKRs | Syncs live Notion OKRs into the Product dashboard | Notion API + Supabase |
 | Deal Pipeline | Tracks HubSpot pipeline health for the CEO | HubSpot CRM API + Supabase |
@@ -271,9 +271,9 @@ TAI Chief is also designed to move beyond summarizing the past. The Company Digi
 | Slack integration | Reads channels/DMs, replies, harvests commitments | Slack OAuth + Events API |
 | Master To-Do | Tracks tasks, waiting-on items, delegated work | Supabase summary JSON |
 | Historical imports | Preserves every upload for trend analysis | `department_snapshot_history` |
-| PDF reports | Exports dashboard state and OpenAI explanation | `jspdf` + `jspdf-autotable` |
+| PDF reports | Exports dashboard state and LLM explanation | `jspdf` + `jspdf-autotable` |
 | Board memos | Saves and exports board-facing memo narratives | `board_memos` |
-| Guardrails | Blocks jailbreaks and wraps untrusted data | Shared OpenAI guardrail layer |
+| Guardrails | Blocks jailbreaks and wraps untrusted data | Shared LLM guardrail layer |
 
 ---
 
@@ -308,7 +308,7 @@ The Executive dashboard intentionally avoids naive technical metrics like row co
 
 ```text
 ai-chief-of-staff/
-  frontend/
+  ai-chief-of-staff/
     app/
       page.js                              # Home command center
       layout.js                            # ClerkProvider, navbar, sign-in/out controls
@@ -334,7 +334,7 @@ ai-chief-of-staff/
       salesforce/page.js                   # Salesforce CEO CRM overview
       stripe/page.js                       # Stripe CEO payments overview
       api/
-        analytics/[department]/route.js    # Guarded OpenAI recommendations
+        analytics/[department]/route.js    # Guarded LLM recommendations
         ceo-chat/route.js                  # Retrieval planner + CEO answer agent
         embeddings/rebuild/route.js        # Backfill vector memory
         notion/okrs/route.js               # Notion OKR sync and store
@@ -358,8 +358,9 @@ ai-chief-of-staff/
         todo/route.js                      # Master To-Do sync and mutation
     lib/
       current-data-store.js                # Supabase read/write + org rollup
-      openai/department-embeddings.js      # OpenAI embeddings + pgvector retrieval
-      openai/guardrails.js                 # Enterprise AI guardrails
+      llm/server.js                        # Provider-neutral LLM and embedding adapters
+      llm/department-embeddings.js      # Configurable embeddings + pgvector retrieval
+      llm/guardrails.js                 # Enterprise AI guardrails
       slack/server.js                      # Slack OAuth/API helpers
       supabase/server.js                   # Server-side Supabase client
     proxy.ts                               # Clerk route protection middleware
@@ -370,9 +371,6 @@ ai-chief-of-staff/
 
   slack/
     slack-app-manifest.example.json        # Slack app manifest template
-
-  backend/
-    main.py                                # FastAPI CSV parsing scaffold
 ```
 
 ---
@@ -389,7 +387,7 @@ flowchart LR
   D --> F[Historical Trend Ledger]
   M --> N[CEO Chat Retrieval]
   E --> G[CEO Dashboard]
-  G --> H[Guarded OpenAI Synthesis]
+  G --> H[Guarded LLM Synthesis]
   N --> H
   H --> I[PDF Report / Board Memo]
   J[Slack Events API] --> K[Task Harvester]
@@ -420,12 +418,12 @@ flowchart LR
 
 1. A department user downloads a CSV template.
 2. The user uploads operating data in that department dashboard.
-3. The frontend parses the CSV into records.
+3. The app parses the CSV in the browser into records.
 4. `/api/current-data` upserts the current department snapshot.
 5. The same upload is appended to the historical import ledger.
 6. Executive rollups calculate org-level scorecards.
 7. Uploads refresh Supabase vector embeddings for CEO chat retrieval.
-8. OpenAI recommendations are generated only on explicit button clicks or chat sends.
+8. LLM recommendations are generated only on explicit button clicks or chat sends.
 9. PDF reports and board memos export from the live dashboard state.
 10. The Digital Twin simulator models scenario consequences from editable operating assumptions.
 11. Slack events and channel sync harvest commitments into the Master To-Do.
@@ -481,10 +479,10 @@ For a full demo workspace, run [supabase/seed-demo.sql](supabase/seed-demo.sql) 
 
 TAI Chief uses Clerk for application authentication.
 
-- `ClerkProvider` wraps the app in [frontend/app/layout.js](frontend/app/layout.js).
+- `ClerkProvider` wraps the app in [ai-chief-of-staff/app/layout.js](ai-chief-of-staff/app/layout.js).
 - Navbar auth controls show `Sign In` and `Sign Up` for signed-out users.
 - Signed-in users see the Clerk account button and a `Sign Out` button in the navbar.
-- [frontend/proxy.ts](frontend/proxy.ts) protects every app/API route except `/sign-in` and `/sign-up`.
+- [ai-chief-of-staff/proxy.ts](ai-chief-of-staff/proxy.ts) protects every app/API route except `/sign-in` and `/sign-up`.
 - Clerk pages live at `/sign-in` and `/sign-up`.
 
 Required Clerk environment variables:
@@ -498,7 +496,9 @@ CLERK_SECRET_KEY=your_clerk_secret_key
 
 ## Enterprise AI Guardrails
 
-All OpenAI API calls use [frontend/lib/openai/guardrails.js](frontend/lib/openai/guardrails.js).
+All LLM calls use [ai-chief-of-staff/lib/llm/guardrails.js](ai-chief-of-staff/lib/llm/guardrails.js) before reaching [ai-chief-of-staff/lib/llm/server.js](ai-chief-of-staff/lib/llm/server.js).
+
+The LLM gateway is implemented with Vercel AI SDK (`ai`) and provider adapters for OpenAI, Anthropic, Google Gemini, plus OpenAI-compatible enterprise gateways.
 
 <table>
   <tr>
@@ -507,15 +507,15 @@ All OpenAI API calls use [frontend/lib/openai/guardrails.js](frontend/lib/openai
   </tr>
   <tr>
     <td><strong>Untrusted Data Wrapping</strong><br />Slack messages, CSV-derived JSON, tasks, and dashboards are marked as evidence, not instructions.</td>
-    <td><strong>Payload Caps</strong><br />Normalizes and truncates oversized inputs before OpenAI calls.</td>
+    <td><strong>Payload Caps</strong><br />Normalizes and truncates oversized inputs before LLM calls.</td>
   </tr>
   <tr>
-    <td><strong>Guarded Responses API</strong><br />All model calls go through <code>guardedResponsesCreate</code>.</td>
+    <td><strong>Guarded LLM Gateway</strong><br />All model calls go through <code>guardedResponsesCreate</code>.</td>
     <td><strong>Action Validation</strong><br />Task resolve/delegate/add actions are validated before mutation.</td>
   </tr>
 </table>
 
-If a direct request resembles a jailbreak or credential-exfiltration attempt, the API blocks it before it reaches OpenAI.
+If a direct request resembles a jailbreak or credential-exfiltration attempt, the API blocks it before it reaches the configured LLM provider.
 
 ---
 
@@ -861,7 +861,7 @@ The Miro overview stores syncs in local `miro-boards.json` or Supabase organizat
       <h3>PDF Reports</h3>
       <ul>
         <li>Designed cover page</li>
-        <li>OpenAI synthesis</li>
+        <li>Provider-neutral LLM synthesis</li>
         <li>KPI cards</li>
         <li>Chart source tables</li>
         <li>Department data tables</li>
@@ -888,11 +888,17 @@ For the best report, upload department CSVs first and click `Fetch Suggestions` 
 
 ## Environment Variables
 
-Create `frontend/.env.local` or configure the same variables in Vercel:
+Create `ai-chief-of-staff/.env.local` or configure the same variables in Vercel:
 
 ```bash
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-5.5
+LLM_API_KEY=your_llm_api_key_here
+LLM_BASE_URL=
+EMBEDDING_PROVIDER=openai
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_API_KEY=
+EMBEDDING_BASE_URL=
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_or_secret_key
 NEXT_PUBLIC_APP_URL=https://your-app-domain.com
@@ -934,6 +940,15 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ```
 
+LLM provider options:
+
+- `LLM_PROVIDER=openai`: uses OpenAI Responses API.
+- `LLM_PROVIDER=openai-compatible`: uses `LLM_BASE_URL` with `/chat/completions`, suitable for OpenRouter, Together, Groq, vLLM, LiteLLM, and enterprise gateways.
+- `LLM_PROVIDER=anthropic`: uses Anthropic Messages API.
+- `LLM_PROVIDER=gemini`: uses Google Gemini Generate Content API.
+
+Embeddings are configured separately because pgvector dimensions must match the database schema. The included Supabase schema uses `vector(1536)`, which matches `text-embedding-3-small`.
+
 Do not commit real `.env` files. They are ignored by `.gitignore`.
 
 ---
@@ -941,7 +956,7 @@ Do not commit real `.env` files. They are ignored by `.gitignore`.
 ## Quick Start
 
 ```bash
-cd frontend
+cd ai-chief-of-staff
 npm install
 npm run dev
 ```
@@ -955,29 +970,9 @@ http://localhost:3000
 Production check:
 
 ```bash
-cd frontend
+cd ai-chief-of-staff
 npm run lint
 npm run build
-```
-
----
-
-## Backend Scaffold
-
-The backend is a FastAPI scaffold for CSV ingestion and validation. The current frontend primarily uses Next.js API routes for Supabase-backed JSONB storage, but the backend is available for future API-backed ingestion.
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install fastapi uvicorn python-multipart
-python main.py
-```
-
-Health check:
-
-```text
-GET http://127.0.0.1:8000/health
 ```
 
 ---
@@ -1107,7 +1102,7 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 /api/current-data                 Supabase JSONB store
 /api/historical-data              Supabase historical import ledger
 /api/board-memos                  Supabase board memo storage
-/api/analytics/[department]       Guarded OpenAI analysis endpoint
+/api/analytics/[department]       Guarded LLM analysis endpoint
 /api/ceo-chat                    Retrieval planner and CEO answer agent
 /api/embeddings/rebuild          Supabase vector memory backfill
 /api/notion/okrs                 Notion Product OKR sync endpoint
@@ -1142,10 +1137,10 @@ Every assumption is visible and editable, including starting cash, current MRR, 
 
 - Role-based access control and organization-level permissions
 - Department schema validation
-- Automated anomaly detection before OpenAI synthesis
+- Automated anomaly detection before LLM synthesis
 - Slack/email action routing to department owners
 - Permissioned multi-company workspaces
-- Audit log viewer for Slack events, OpenAI calls, and board memo generation
+- Audit log viewer for Slack events, LLM calls, and board memo generation
 
 ---
 
